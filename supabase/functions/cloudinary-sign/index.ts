@@ -3,10 +3,11 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 // Restrict CORS to known origins.
 const ALLOWED_ORIGINS = [
-  'https://sumiro.in',
-  'https://www.sumiro.in',
-  'https://admin.sumiro.in',
-  // Local development (plain and admin-subdomain variants)
+  'https://thesumiro.com',
+  'https://www.thesumiro.com',
+  'https://admin.thesumiro.com',
+  'https://thesumiro.vercel.app',
+  // Local development
   'http://localhost:5173',
   'http://localhost:4173',
   'http://admin.localhost:5173',

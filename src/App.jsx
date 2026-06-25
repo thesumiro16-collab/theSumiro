@@ -80,7 +80,7 @@ export default function App() {
   const isAdminSubdomain = hostname.startsWith('admin.');
   
   // Detect if strictly public production domain (no admin prefix)
-  const isStrictPublic = hostname === 'sumiro.in' || hostname === 'www.sumiro.in';
+  const isStrictPublic = hostname === 'thesumiro.com' || hostname === 'www.thesumiro.com';
 
   if (isAdminSubdomain) {
     // Admin Subdomain Layout (No public Navbar/Footer, restricted to admin routes)

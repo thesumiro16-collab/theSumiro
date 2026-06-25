@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 
 const SITE_NAME = 'The Sumiro';
-const SITE_URL = 'https://sumiro.in';
+const SITE_URL = 'https://thesumiro.com';
 const DEFAULT_IMAGE = `${SITE_URL}/The%20Sumiro%20Logo.png`;
 
 /**

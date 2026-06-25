@@ -1,8 +1,7 @@
 User-agent: *
 Allow: /
 
-# Keep the admin app out of search indexes
 Disallow: /login
 Disallow: /app/
 
-Sitemap: https://sumiro.in/sitemap.xml
+Sitemap: https://thesumiro.com/sitemap.xml
