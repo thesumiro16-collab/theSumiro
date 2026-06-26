@@ -39,7 +39,6 @@ export default function AboutPage() {
         title={settings.seo_about_title || 'About Us'}
         description={settings.seo_about_description}
         path="/about"
-        image={settings.seo_og_image || undefined}
       />
 
       {/* Page Hero */}

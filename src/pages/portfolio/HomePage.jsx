@@ -169,7 +169,6 @@ export default function HomePage() {
         title={settings.seo_home_title || 'Home'}
         description={settings.seo_home_description}
         path="/"
-        image={settings.seo_og_image || undefined}
       />
       <HeroBanner />
 

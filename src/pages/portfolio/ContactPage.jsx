@@ -65,7 +65,6 @@ export default function ContactPage() {
         title={settings.seo_contact_title || 'Contact Us'}
         description={settings.seo_contact_description}
         path="/contact"
-        image={settings.seo_og_image || undefined}
       />
 
       {/* Page Hero */}

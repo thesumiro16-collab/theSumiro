@@ -1,20 +1,19 @@
 import { useEffect } from 'react';
+import { useSettings } from '../../contexts/SettingsContext';
 
 const SITE_NAME = 'The Sumiro';
 const SITE_URL = 'https://thesumiro.com';
-const DEFAULT_IMAGE = `${SITE_URL}/The%20Sumiro%20Logo.png`;
+const FALLBACK_IMAGE = `${SITE_URL}/favicon.png`;
 
 /**
- * Dependency-free per-page SEO manager.
- * Updates document.title, meta description, canonical link, and the
- * Open Graph / Twitter tags whenever a page mounts or its props change.
+ * Per-page SEO manager. Reads global settings (keywords, OG image,
+ * Google verification) from SettingsContext automatically, so every
+ * change saved in the admin SEO panel takes effect without a redeploy.
+ *
+ * Per-page title and description are passed as props.
  *
  * Usage:
- *   <Seo
- *     title="About Us"
- *     description="..."
- *     path="/about"
- *   />
+ *   <Seo title="About Us" description="..." path="/about" />
  */
 function upsertMeta(attr, key, content) {
   if (!content) return;
@@ -37,29 +36,42 @@ function upsertCanonical(href) {
   el.setAttribute('href', href);
 }
 
-export default function Seo({ title, description, path = '/', image = DEFAULT_IMAGE, noindex = false }) {
+export default function Seo({ title, description, path = '/', noindex = false }) {
+  const { settings } = useSettings();
+
   useEffect(() => {
-    const fullTitle = title ? `${title} — ${SITE_NAME}` : `${SITE_NAME} — Premium Fabric Designs from Surat, India`;
-    const url = `${SITE_URL}${path}`;
-    const ogImage = image || DEFAULT_IMAGE;
+    const fullTitle = title
+      ? `${title} — ${SITE_NAME}`
+      : `${SITE_NAME} — Premium Fabric Designs from Surat, India`;
+    const url      = `${SITE_URL}${path}`;
+    const ogImage  = settings.seo_og_image || FALLBACK_IMAGE;
+    const keywords = settings.seo_keywords;
+    const gVerify  = settings.seo_google_verification;
 
     document.title = fullTitle;
 
-    upsertMeta('name', 'description', description);
-    upsertMeta('name', 'robots', noindex ? 'noindex, nofollow' : 'index, follow');
+    upsertMeta('name', 'description',          description);
+    upsertMeta('name', 'keywords',             keywords);
+    upsertMeta('name', 'robots',               noindex ? 'noindex, nofollow' : 'index, follow');
+    upsertMeta('name', 'google-site-verification', gVerify);
     upsertCanonical(url);
 
     // Open Graph
-    upsertMeta('property', 'og:title', fullTitle);
+    upsertMeta('property', 'og:title',       fullTitle);
     upsertMeta('property', 'og:description', description);
-    upsertMeta('property', 'og:url', url);
-    upsertMeta('property', 'og:image', ogImage);
+    upsertMeta('property', 'og:url',         url);
+    upsertMeta('property', 'og:image',       ogImage);
 
     // Twitter
-    upsertMeta('name', 'twitter:title', fullTitle);
+    upsertMeta('name', 'twitter:title',       fullTitle);
     upsertMeta('name', 'twitter:description', description);
-    upsertMeta('name', 'twitter:image', ogImage);
-  }, [title, description, path, image, noindex]);
+    upsertMeta('name', 'twitter:image',       ogImage);
+  }, [
+    title, description, path, noindex,
+    settings.seo_og_image,
+    settings.seo_keywords,
+    settings.seo_google_verification,
+  ]);
 
   return null;
 }
