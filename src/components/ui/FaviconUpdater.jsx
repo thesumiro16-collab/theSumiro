@@ -20,7 +20,8 @@ export default function FaviconUpdater() {
       document.head.appendChild(link);
     }
     link.setAttribute('type', url.endsWith('.svg') ? 'image/svg+xml' : 'image/png');
-    link.setAttribute('href', url);
+    // Add cache-buster so browsers re-fetch the new favicon instead of serving the old cached one
+    link.setAttribute('href', `${url}?v=${Date.now()}`);
   }, [settings.seo_favicon_url]);
 
   return null;
