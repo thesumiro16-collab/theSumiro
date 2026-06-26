@@ -26,6 +26,7 @@ const InboxPage = lazy(() => import('./pages/app/InboxPage'));
 const TickerPage = lazy(() => import('./pages/app/TickerPage'));
 const EnquirySettingsPage = lazy(() => import('./pages/app/EnquirySettingsPage'));
 const AboutEditorPage = lazy(() => import('./pages/app/AboutEditorPage'));
+const SeoSettingsPage = lazy(() => import('./pages/app/SeoSettingsPage'));
 
 /* Minimal loading spinner shown while lazy chunks load */
 function PageLoader() {
@@ -105,6 +106,7 @@ export default function App() {
                       <Route path="/app/ticker" element={<TickerPage />} />
                       <Route path="/app/settings" element={<EnquirySettingsPage />} />
                       <Route path="/app/about-editor" element={<AboutEditorPage />} />
+                      <Route path="/app/seo" element={<SeoSettingsPage />} />
                     </Route>
                   </Route>
 
@@ -158,6 +160,7 @@ export default function App() {
                         <Route path="/app/ticker" element={<TickerPage />} />
                         <Route path="/app/settings" element={<EnquirySettingsPage />} />
                       <Route path="/app/about-editor" element={<AboutEditorPage />} />
+                      <Route path="/app/seo" element={<SeoSettingsPage />} />
                       </Route>
                     </Route>
                   </>

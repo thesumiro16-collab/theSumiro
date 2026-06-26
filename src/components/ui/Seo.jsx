@@ -41,6 +41,7 @@ export default function Seo({ title, description, path = '/', image = DEFAULT_IM
   useEffect(() => {
     const fullTitle = title ? `${title} — ${SITE_NAME}` : `${SITE_NAME} — Premium Fabric Designs from Surat, India`;
     const url = `${SITE_URL}${path}`;
+    const ogImage = image || DEFAULT_IMAGE;
 
     document.title = fullTitle;
 
@@ -52,12 +53,12 @@ export default function Seo({ title, description, path = '/', image = DEFAULT_IM
     upsertMeta('property', 'og:title', fullTitle);
     upsertMeta('property', 'og:description', description);
     upsertMeta('property', 'og:url', url);
-    upsertMeta('property', 'og:image', image);
+    upsertMeta('property', 'og:image', ogImage);
 
     // Twitter
     upsertMeta('name', 'twitter:title', fullTitle);
     upsertMeta('name', 'twitter:description', description);
-    upsertMeta('name', 'twitter:image', image);
+    upsertMeta('name', 'twitter:image', ogImage);
   }, [title, description, path, image, noindex]);
 
   return null;

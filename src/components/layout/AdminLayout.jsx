@@ -119,6 +119,15 @@ export default function AdminLayout() {
         </svg>
       ),
     },
+    {
+      to: '/app/seo',
+      label: 'SEO Settings',
+      icon: (
+        <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35M17 11a6 6 0 11-12 0 6 6 0 0112 0z" />
+        </svg>
+      ),
+    },
   ];
 
   /* ── Computed layout values ───────────────────────────── */

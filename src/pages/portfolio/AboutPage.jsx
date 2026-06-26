@@ -36,9 +36,10 @@ export default function AboutPage() {
   return (
     <div className="animate-fade-in">
       <Seo
-        title="About Us"
-        description="Founded in Surat in 2003, The Sumiro is a fabric design factory blending traditional Indian craftsmanship with modern looms. Quality-first, on-time delivery, and innovative textile design."
+        title={settings.seo_about_title || 'About Us'}
+        description={settings.seo_about_description}
         path="/about"
+        image={settings.seo_og_image || undefined}
       />
 
       {/* Page Hero */}

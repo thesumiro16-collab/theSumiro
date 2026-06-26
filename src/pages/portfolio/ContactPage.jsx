@@ -62,9 +62,10 @@ export default function ContactPage() {
   return (
     <div className="animate-fade-in">
       <Seo
-        title="Contact Us"
-        description="Get in touch with The Sumiro for premium fabric design enquiries. Visit our factory in Surat, Gujarat, or reach us by phone, email, or WhatsApp."
+        title={settings.seo_contact_title || 'Contact Us'}
+        description={settings.seo_contact_description}
         path="/contact"
+        image={settings.seo_og_image || undefined}
       />
 
       {/* Page Hero */}
