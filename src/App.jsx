@@ -8,6 +8,7 @@ import Navbar from './components/layout/Navbar';
 import Footer from './components/layout/Footer';
 import ToastContainer from './components/ui/ToastContainer';
 import ProtectedRoute from './components/auth/ProtectedRoute';
+import FaviconUpdater from './components/ui/FaviconUpdater';
 
 // Lazy-loaded pages — only downloaded when the route is visited
 const HomePage = lazy(() => import('./pages/portfolio/HomePage'));
@@ -91,6 +92,7 @@ export default function App() {
           <SettingsProvider>
             <ToastProvider>
               <Suspense fallback={<PageLoader />}>
+                <FaviconUpdater />
                 <Routes>
                   {/* Root redirects to dashboard */}
                   <Route path="/" element={<Navigate to="/app/dashboard" replace />} />

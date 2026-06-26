@@ -4,6 +4,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../../contexts/ToastContext';
 import { useSettings } from '../../contexts/SettingsContext';
 import { DEFAULT_SETTINGS } from '../../hooks/useSettings';
+import { uploadPhotosToCloudinary } from '../../lib/cloudinary';
 
 const labelStyle = {
   display: 'block', fontFamily: 'var(--font-sans)',
@@ -65,6 +66,7 @@ export default function SeoSettingsPage() {
   const [form, setForm] = useState({
     seo_keywords: DEFAULT_SETTINGS.seo_keywords,
     seo_og_image: DEFAULT_SETTINGS.seo_og_image,
+    seo_favicon_url: DEFAULT_SETTINGS.seo_favicon_url,
     seo_google_verification: DEFAULT_SETTINGS.seo_google_verification,
     seo_home_title: DEFAULT_SETTINGS.seo_home_title,
     seo_home_description: DEFAULT_SETTINGS.seo_home_description,
@@ -73,6 +75,8 @@ export default function SeoSettingsPage() {
     seo_contact_title: DEFAULT_SETTINGS.seo_contact_title,
     seo_contact_description: DEFAULT_SETTINGS.seo_contact_description,
   });
+  const [faviconUploading, setFaviconUploading] = useState(false);
+  const [dragOverFavicon, setDragOverFavicon] = useState(false);
 
   useEffect(() => {
     async function load() {
@@ -90,6 +94,25 @@ export default function SeoSettingsPage() {
   }, []);
 
   const set = (key) => (e) => setForm(prev => ({ ...prev, [key]: e.target.value }));
+
+  const handleFaviconUpload = async (file) => {
+    if (!file || !file.type.startsWith('image/')) {
+      addToast({ type: 'error', message: 'Please select an image file (PNG, JPG, SVG, ICO)' });
+      return;
+    }
+    setFaviconUploading(true);
+    try {
+      const res = await uploadPhotosToCloudinary([file]);
+      if (res && res.length > 0) {
+        setForm(prev => ({ ...prev, seo_favicon_url: res[0].secure_url }));
+        addToast({ type: 'success', message: 'Favicon uploaded — click Save to apply' });
+      }
+    } catch (err) {
+      addToast({ type: 'error', message: err.message || 'Favicon upload failed' });
+    } finally {
+      setFaviconUploading(false);
+    }
+  };
 
   const handleSave = async (e) => {
     e.preventDefault();
@@ -171,6 +194,83 @@ export default function SeoSettingsPage() {
             </Field>
             <Field label="Google Search Console Verification Code" hint="The content value from your Google site verification meta tag. Found in Google Search Console → Settings → Ownership verification.">
               <input type="text" value={form.seo_google_verification} onChange={set('seo_google_verification')} placeholder="N7yk9uw7RrScjpIep5..." style={inputStyle} onFocus={focus} onBlur={blur} />
+            </Field>
+
+            <Field label="Favicon" hint="The small icon shown in browser tabs, Google search results, and bookmarks. Recommended: 512×512px PNG. Drag & drop or click to upload.">
+              <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
+                {/* Current favicon preview */}
+                <div style={{ flexShrink: 0 }}>
+                  <p style={{ ...hintStyle, marginTop: 0, marginBottom: '6px' }}>Current</p>
+                  <div style={{ width: '64px', height: '64px', borderRadius: '10px', border: '1.5px solid var(--color-border)', background: 'var(--color-bg-soft)', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+                    <img
+                      src={form.seo_favicon_url || '/favicon.png'}
+                      alt="Current favicon"
+                      style={{ width: '48px', height: '48px', objectFit: 'contain' }}
+                    />
+                  </div>
+                </div>
+
+                {/* Upload zone */}
+                <div
+                  onDragOver={e => { e.preventDefault(); setDragOverFavicon(true); }}
+                  onDragLeave={() => setDragOverFavicon(false)}
+                  onDrop={e => {
+                    e.preventDefault();
+                    setDragOverFavicon(false);
+                    const file = e.dataTransfer.files?.[0];
+                    if (file) handleFaviconUpload(file);
+                  }}
+                  onClick={() => document.getElementById('favicon-upload-input').click()}
+                  style={{
+                    flex: 1, minWidth: '200px',
+                    border: `2px dashed ${dragOverFavicon ? '#E8890C' : 'var(--color-border)'}`,
+                    borderRadius: '10px', padding: '20px', textAlign: 'center',
+                    cursor: faviconUploading ? 'not-allowed' : 'pointer',
+                    background: dragOverFavicon ? 'rgba(232,137,12,0.04)' : 'var(--color-bg-soft)',
+                    transition: 'border-color 0.2s, background 0.2s',
+                    opacity: faviconUploading ? 0.7 : 1,
+                  }}
+                >
+                  {faviconUploading ? (
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px' }}>
+                      <div style={{ width: '18px', height: '18px', border: '2px solid #E5E0D8', borderTopColor: '#E8890C', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+                      <span style={{ fontFamily: 'var(--font-sans)', fontSize: '12px', color: '#737373' }}>Uploading…</span>
+                    </div>
+                  ) : (
+                    <>
+                      <div style={{ color: dragOverFavicon ? '#E8890C' : '#A3A3A3', display: 'flex', justifyContent: 'center', marginBottom: '6px' }}>
+                        <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        </svg>
+                      </div>
+                      <p style={{ fontFamily: 'var(--font-sans)', fontSize: '12px', fontWeight: 600, color: 'var(--color-text-primary)', margin: 0 }}>
+                        {dragOverFavicon ? 'Drop to upload' : 'Drag & drop or click to upload'}
+                      </p>
+                      <p style={{ fontFamily: 'var(--font-sans)', fontSize: '10px', color: '#A3A3A3', marginTop: '3px' }}>
+                        PNG · JPG · SVG · 512×512px recommended
+                      </p>
+                    </>
+                  )}
+                  <input
+                    id="favicon-upload-input"
+                    type="file"
+                    accept="image/png,image/jpeg,image/svg+xml,image/x-icon,image/webp"
+                    onChange={e => { if (e.target.files?.[0]) handleFaviconUpload(e.target.files[0]); e.target.value = ''; }}
+                    style={{ display: 'none' }}
+                  />
+                </div>
+
+                {/* Remove button */}
+                {form.seo_favicon_url && (
+                  <button
+                    type="button"
+                    onClick={() => setForm(prev => ({ ...prev, seo_favicon_url: '' }))}
+                    style={{ padding: '8px 14px', border: '1px solid #FECACA', borderRadius: '8px', background: '#FEF2F2', color: '#EF4444', fontFamily: 'var(--font-sans)', fontSize: '11px', fontWeight: 700, cursor: 'pointer' }}
+                  >
+                    Remove
+                  </button>
+                )}
+              </div>
             </Field>
           </Section>
 

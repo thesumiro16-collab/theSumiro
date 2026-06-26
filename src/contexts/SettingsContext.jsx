@@ -17,6 +17,7 @@ export const DEFAULT_SETTINGS = {
   // SEO
   seo_keywords: 'fabric design, silk brocade, jacquard weave, zari embroidery, Surat textiles, premium fabrics India, custom fabric manufacturer, The Sumiro',
   seo_og_image: '',
+  seo_favicon_url: '',
   seo_google_verification: 'N7yk9uw7RrScjpIep5-JQL2QrXxXd1pKWhx5mRha61Y',
   seo_home_title: 'The Sumiro — Premium Fabric Designs from Surat, India',
   seo_home_description: 'The Sumiro crafts premium silk brocades, jacquard weaves, and artisanal embroideries from Surat, India. Bespoke fabric designs blending heritage craftsmanship with modern looms since 2003.',
