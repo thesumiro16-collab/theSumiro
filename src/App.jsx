@@ -131,6 +131,7 @@ export default function App() {
         <SettingsProvider>
           <ToastProvider>
             <Suspense fallback={<PageLoader />}>
+              <FaviconUpdater />
               <Routes>
                 {/* Standalone maintenance page (no navbar/footer) */}
                 <Route path="/maintenance" element={<MaintenancePage />} />
