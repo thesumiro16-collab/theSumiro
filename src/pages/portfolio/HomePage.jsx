@@ -174,9 +174,10 @@ export default function HomePage() {
 
       {/* ── MARQUEE TICKER ──────────────────────────────────── */}
       <div aria-hidden="true" style={{ background: '#1A1208', padding: '14px 0', overflow: 'hidden', whiteSpace: 'nowrap' }}>
-        <div className="animate-marquee" style={{ display: 'inline-flex' }}>
-          {[...marqueeTags, ...marqueeTags].map((text, i) => (
-            <span key={i} style={{ display: 'inline-flex', alignItems: 'center', gap: '20px', padding: '0 28px', fontFamily: 'var(--font-sans)', fontSize: '10px', fontWeight: 700, letterSpacing: '0.22em', textTransform: 'uppercase', color: i % 2 === 0 ? '#FFFFFF' : '#E8890C' }}>
+        <div style={{ display: 'flex', width: 'max-content', animation: '30s linear infinite marquee-scroll', willChange: 'transform' }}>
+          {/* Four copies so content always fills the viewport without a visible reset */}
+          {[...marqueeTags, ...marqueeTags, ...marqueeTags, ...marqueeTags].map((text, i) => (
+            <span key={i} style={{ display: 'inline-flex', alignItems: 'center', gap: '20px', padding: '0 28px', fontFamily: 'var(--font-sans)', fontSize: '10px', fontWeight: 700, letterSpacing: '0.22em', textTransform: 'uppercase', color: i % 2 === 0 ? '#FFFFFF' : '#E8890C', flexShrink: 0 }}>
               {text}
               <span style={{ width: '4px', height: '4px', borderRadius: '50%', background: '#E8890C', flexShrink: 0 }} />
             </span>
