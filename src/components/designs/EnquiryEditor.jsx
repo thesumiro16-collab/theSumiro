@@ -17,7 +17,7 @@ const miniInput = {
   outline: 'none',
 };
 
-function SlideCard({ index, imgSrc, title, subtitle, tag, isNew, uploading, uploadText, onChangeTitle, onChangeSubtitle, onChangeTag, onRemove }) {
+function SlideCard({ index, imgSrc, title, subtitle, tag, isNew, uploading, uploadText, onChangeTitle, onChangeSubtitle, onChangeTag, onRemove, disabled }) {
   return (
     <div style={{
       display: 'flex', gap: '12px', padding: '12px',
@@ -46,6 +46,7 @@ function SlideCard({ index, imgSrc, title, subtitle, tag, isNew, uploading, uplo
           placeholder="Tag (e.g. Signature Series)"
           value={tag}
           onChange={e => onChangeTag(e.target.value)}
+          disabled={disabled}
           style={miniInput}
         />
         <input
@@ -53,6 +54,7 @@ function SlideCard({ index, imgSrc, title, subtitle, tag, isNew, uploading, uplo
           placeholder="Title (e.g. Silk Brocade Collection)"
           value={title}
           onChange={e => onChangeTitle(e.target.value)}
+          disabled={disabled}
           style={{ ...miniInput, fontWeight: 600 }}
         />
         <input
@@ -60,26 +62,30 @@ function SlideCard({ index, imgSrc, title, subtitle, tag, isNew, uploading, uplo
           placeholder="Subtitle (e.g. Woven with gold & silver zari threads)"
           value={subtitle}
           onChange={e => onChangeSubtitle(e.target.value)}
+          disabled={disabled}
           style={miniInput}
         />
       </div>
 
       {/* Remove */}
-      <button
-        type="button"
-        onClick={onRemove}
-        style={{ flexShrink: 0, width: '26px', height: '26px', borderRadius: '50%', background: '#FEE2E2', color: '#EF4444', border: '1px solid #FECACA', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '14px', marginTop: '2px' }}
-        aria-label="Remove slide"
-      >
-        ×
-      </button>
+      {!disabled && (
+        <button
+          type="button"
+          onClick={onRemove}
+          style={{ flexShrink: 0, width: '26px', height: '26px', borderRadius: '50%', background: '#FEE2E2', color: '#EF4444', border: '1px solid #FECACA', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '14px', marginTop: '2px' }}
+          aria-label="Remove slide"
+        >
+          ×
+        </button>
+      )}
     </div>
   );
 }
 
 export default function EnquiryEditor({ onSuccess }) {
-  const { user } = useAuth();
+  const { user, canWrite } = useAuth();
   const { addToast } = useToast();
+  const isWritable = canWrite ? canWrite('settings') : true;
   const [form, setForm] = useState(DEFAULT_SETTINGS);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -416,6 +422,7 @@ export default function EnquiryEditor({ onSuccess }) {
             placeholder="e.g. +91 79908 63721"
             value={form.enquiry_phone}
             onChange={handleChange}
+            disabled={!isWritable}
             className="form-input"
             required
           />
@@ -436,6 +443,7 @@ export default function EnquiryEditor({ onSuccess }) {
             placeholder="e.g. +91 99254 39839"
             value={form.alt_enquiry_phone}
             onChange={handleChange}
+            disabled={!isWritable}
             className="form-input"
           />
           <p style={{ fontFamily: 'var(--font-sans)', fontSize: '11px', color: '#A3A3A3', marginTop: '6px' }}>
@@ -455,6 +463,7 @@ export default function EnquiryEditor({ onSuccess }) {
             placeholder="e.g. info@sumiro.in"
             value={form.enquiry_email}
             onChange={handleChange}
+            disabled={!isWritable}
             className="form-input"
             required
           />
@@ -473,9 +482,9 @@ export default function EnquiryEditor({ onSuccess }) {
         <div className="space-y-2">
           <label className="form-label">Video Thumbnail / Poster Cover</label>
           <div
-            onDragOver={e => { e.preventDefault(); setDragOverThumbnail(true); }}
-            onDragLeave={() => setDragOverThumbnail(false)}
-            onDrop={(e) => {
+            onDragOver={isWritable ? e => { e.preventDefault(); setDragOverThumbnail(true); } : undefined}
+            onDragLeave={isWritable ? () => setDragOverThumbnail(false) : undefined}
+            onDrop={isWritable ? (e) => {
               e.preventDefault();
               setDragOverThumbnail(false);
               const file = e.dataTransfer.files?.[0];
@@ -483,15 +492,15 @@ export default function EnquiryEditor({ onSuccess }) {
                 setThumbnailFile(file);
                 setThumbnailPreview(URL.createObjectURL(file));
               }
-            }}
+            } : undefined}
             style={{
               border: `2px dashed ${dragOverThumbnail ? '#E8890C' : '#E5E0D8'}`,
               borderRadius: '10px', padding: '24px', textAlign: 'center',
-              cursor: 'pointer',
+              cursor: isWritable ? 'pointer' : 'default',
               background: dragOverThumbnail ? 'rgba(232,137,12,0.04)' : 'var(--color-bg-soft)',
               transition: 'border-color 0.2s, background 0.2s',
             }}
-            onClick={() => document.getElementById('thumbnail-file-input').click()}
+            onClick={isWritable ? () => document.getElementById('thumbnail-file-input').click() : undefined}
           >
             {thumbnailPreview ? (
               <div className="relative inline-block" onClick={(e) => e.stopPropagation()}>
@@ -505,13 +514,15 @@ export default function EnquiryEditor({ onSuccess }) {
                     {thumbnailProgress}
                   </div>
                 )}
-                <button
-                  type="button"
-                  onClick={handleRemoveThumbnail}
-                  style={{ position: 'absolute', top: '-8px', right: '-8px', width: '24px', height: '24px', borderRadius: '50%', background: '#EF4444', color: '#FFFFFF', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '14px', cursor: 'pointer', boxShadow: '0 2px 6px rgba(0,0,0,0.2)' }}
-                >
-                  ×
-                </button>
+                {isWritable && (
+                  <button
+                    type="button"
+                    onClick={handleRemoveThumbnail}
+                    style={{ position: 'absolute', top: '-8px', right: '-8px', width: '24px', height: '24px', borderRadius: '50%', background: '#EF4444', color: '#FFFFFF', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '14px', cursor: 'pointer', boxShadow: '0 2px 6px rgba(0,0,0,0.2)' }}
+                  >
+                    ×
+                  </button>
+                )}
               </div>
             ) : (
               <div className="space-y-2">
@@ -523,9 +534,15 @@ export default function EnquiryEditor({ onSuccess }) {
                 <p style={{ fontFamily: 'var(--font-sans)', fontSize: '12px', fontWeight: 600, color: 'var(--color-text-primary)' }}>
                   Drag & drop cover image here
                 </p>
-                <p style={{ fontFamily: 'var(--font-sans)', fontSize: '10px', color: 'var(--color-text-muted)' }}>
-                  or <span style={{ color: '#E8890C', fontWeight: 700 }}>browse files</span> · JPEG / PNG / WEBP base formats
-                </p>
+                {isWritable ? (
+                  <p style={{ fontFamily: 'var(--font-sans)', fontSize: '10px', color: 'var(--color-text-muted)' }}>
+                    or <span style={{ color: '#E8890C', fontWeight: 700 }}>browse files</span> · JPEG / PNG / WEBP base formats
+                  </p>
+                ) : (
+                  <p style={{ fontFamily: 'var(--font-sans)', fontSize: '10px', color: '#DC2626', fontWeight: 600 }}>
+                    Read-only access
+                  </p>
+                )}
               </div>
             )}
             <input
@@ -542,9 +559,9 @@ export default function EnquiryEditor({ onSuccess }) {
         <div className="space-y-2">
           <label className="form-label">Campaign Video File</label>
           <div
-            onDragOver={e => { e.preventDefault(); setDragOverVideo(true); }}
-            onDragLeave={() => setDragOverVideo(false)}
-            onDrop={(e) => {
+            onDragOver={isWritable ? e => { e.preventDefault(); setDragOverVideo(true); } : undefined}
+            onDragLeave={isWritable ? () => setDragOverVideo(false) : undefined}
+            onDrop={isWritable ? (e) => {
               e.preventDefault();
               setDragOverVideo(false);
               const file = e.dataTransfer.files?.[0];
@@ -552,15 +569,15 @@ export default function EnquiryEditor({ onSuccess }) {
                 setVideoFile(file);
                 setVideoPreview(URL.createObjectURL(file));
               }
-            }}
+            } : undefined}
             style={{
               border: `2px dashed ${dragOverVideo ? '#E8890C' : '#E5E0D8'}`,
               borderRadius: '10px', padding: '24px', textAlign: 'center',
-              cursor: 'pointer',
+              cursor: isWritable ? 'pointer' : 'default',
               background: dragOverVideo ? 'rgba(232,137,12,0.04)' : 'var(--color-bg-soft)',
               transition: 'border-color 0.2s, background 0.2s',
             }}
-            onClick={() => document.getElementById('video-file-input').click()}
+            onClick={isWritable ? () => document.getElementById('video-file-input').click() : undefined}
           >
             {videoPreview ? (
               <div className="relative inline-block" onClick={(e) => e.stopPropagation()}>
@@ -577,13 +594,15 @@ export default function EnquiryEditor({ onSuccess }) {
                     <span>Uploading {videoProgress}%</span>
                   </div>
                 )}
-                <button
-                  type="button"
-                  onClick={handleRemoveVideo}
-                  style={{ position: 'absolute', top: '-8px', right: '-8px', width: '24px', height: '24px', borderRadius: '50%', background: '#EF4444', color: '#FFFFFF', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '14px', cursor: 'pointer', boxShadow: '0 2px 6px rgba(0,0,0,0.2)' }}
-                >
-                  ×
-                </button>
+                {isWritable && (
+                  <button
+                    type="button"
+                    onClick={handleRemoveVideo}
+                    style={{ position: 'absolute', top: '-8px', right: '-8px', width: '24px', height: '24px', borderRadius: '50%', background: '#EF4444', color: '#FFFFFF', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '14px', cursor: 'pointer', boxShadow: '0 2px 6px rgba(0,0,0,0.2)' }}
+                  >
+                    ×
+                  </button>
+                )}
               </div>
             ) : (
               <div className="space-y-2">
@@ -595,9 +614,15 @@ export default function EnquiryEditor({ onSuccess }) {
                 <p style={{ fontFamily: 'var(--font-sans)', fontSize: '12px', fontWeight: 600, color: 'var(--color-text-primary)' }}>
                   Drag & drop video file here
                 </p>
-                <p style={{ fontFamily: 'var(--font-sans)', fontSize: '10px', color: 'var(--color-text-muted)' }}>
-                  or <span style={{ color: '#E8890C', fontWeight: 700 }}>browse files</span> · MP4 / WebM (max 50MB)
-                </p>
+                {isWritable ? (
+                  <p style={{ fontFamily: 'var(--font-sans)', fontSize: '10px', color: 'var(--color-text-muted)' }}>
+                    or <span style={{ color: '#E8890C', fontWeight: 700 }}>browse files</span> · MP4 / WebM (max 50MB)
+                  </p>
+                ) : (
+                  <p style={{ fontFamily: 'var(--font-sans)', fontSize: '10px', color: '#DC2626', fontWeight: 600 }}>
+                    Read-only access
+                  </p>
+                )}
               </div>
             )}
             <input
@@ -638,6 +663,7 @@ export default function EnquiryEditor({ onSuccess }) {
             tag={slide.tag}
             isNew={false}
             uploading={false}
+            disabled={!isWritable}
             onChangeTitle={v => updateCollectionImageField(idx, 'title', v)}
             onChangeSubtitle={v => updateCollectionImageField(idx, 'subtitle', v)}
             onChangeTag={v => updateCollectionImageField(idx, 'tag', v)}
@@ -657,6 +683,7 @@ export default function EnquiryEditor({ onSuccess }) {
             isNew={true}
             uploading={!!collectionUploadProgress}
             uploadText={collectionUploadProgress ? `${collectionUploadProgress.current}/${collectionUploadProgress.total}` : ''}
+            disabled={!isWritable}
             onChangeTitle={v => updateNewCollectionField(idx, 'title', v)}
             onChangeSubtitle={v => updateNewCollectionField(idx, 'subtitle', v)}
             onChangeTag={v => updateNewCollectionField(idx, 'tag', v)}
@@ -665,43 +692,49 @@ export default function EnquiryEditor({ onSuccess }) {
         ))}
 
         {/* Drop zone */}
-        <div
-          onDragOver={e => { e.preventDefault(); setDragOverCollection(true); }}
-          onDragLeave={() => setDragOverCollection(false)}
-          onDrop={e => {
-            e.preventDefault();
-            setDragOverCollection(false);
-            addCollectionFiles(Array.from(e.dataTransfer.files || []));
-          }}
-          onClick={() => document.getElementById('collection-photos-input').click()}
-          style={{
-            border: `2px dashed ${dragOverCollection ? '#E8890C' : '#E5E0D8'}`,
-            borderRadius: '10px', padding: '20px', textAlign: 'center',
-            cursor: 'pointer',
-            background: dragOverCollection ? 'rgba(232,137,12,0.04)' : 'var(--color-bg-soft)',
-            transition: 'border-color 0.2s, background 0.2s',
-          }}
-        >
-          <div style={{ color: dragOverCollection ? '#E8890C' : 'var(--color-text-muted)', display: 'flex', justifyContent: 'center', marginBottom: '6px' }}>
-            <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-            </svg>
+        {isWritable ? (
+          <div
+            onDragOver={e => { e.preventDefault(); setDragOverCollection(true); }}
+            onDragLeave={() => setDragOverCollection(false)}
+            onDrop={e => {
+              e.preventDefault();
+              setDragOverCollection(false);
+              addCollectionFiles(Array.from(e.dataTransfer.files || []));
+            }}
+            onClick={() => document.getElementById('collection-photos-input').click()}
+            style={{
+              border: `2px dashed ${dragOverCollection ? '#E8890C' : '#E5E0D8'}`,
+              borderRadius: '10px', padding: '20px', textAlign: 'center',
+              cursor: 'pointer',
+              background: dragOverCollection ? 'rgba(232,137,12,0.04)' : 'var(--color-bg-soft)',
+              transition: 'border-color 0.2s, background 0.2s',
+            }}
+          >
+            <div style={{ color: dragOverCollection ? '#E8890C' : 'var(--color-text-muted)', display: 'flex', justifyContent: 'center', marginBottom: '6px' }}>
+              <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              </svg>
+            </div>
+            <p style={{ fontFamily: 'var(--font-sans)', fontSize: '12px', fontWeight: 600, color: 'var(--color-text-primary)' }}>
+              {dragOverCollection ? 'Drop to add slides' : 'Add more collection photos'}
+            </p>
+            <p style={{ fontFamily: 'var(--font-sans)', fontSize: '10px', color: 'var(--color-text-muted)', marginTop: '3px' }}>
+              or <span style={{ color: '#E8890C', fontWeight: 700 }}>browse files</span> · select multiple · JPEG / PNG / WEBP
+            </p>
+            <input
+              id="collection-photos-input"
+              type="file"
+              multiple
+              accept="image/jpeg,image/png,image/webp"
+              onChange={handleCollectionFilesChange}
+              style={{ display: 'none' }}
+            />
           </div>
-          <p style={{ fontFamily: 'var(--font-sans)', fontSize: '12px', fontWeight: 600, color: 'var(--color-text-primary)' }}>
-            {dragOverCollection ? 'Drop to add slides' : 'Add more collection photos'}
+        ) : (
+          <p style={{ fontFamily: 'var(--font-sans)', fontSize: '12px', color: '#B45309', background: '#FEF9EE', padding: '10px 14px', borderRadius: '8px', border: '1px solid #FDE68A' }}>
+            Slide management is disabled in read-only mode.
           </p>
-          <p style={{ fontFamily: 'var(--font-sans)', fontSize: '10px', color: 'var(--color-text-muted)', marginTop: '3px' }}>
-            or <span style={{ color: '#E8890C', fontWeight: 700 }}>browse files</span> · select multiple · JPEG / PNG / WEBP
-          </p>
-          <input
-            id="collection-photos-input"
-            type="file"
-            multiple
-            accept="image/jpeg,image/png,image/webp"
-            onChange={handleCollectionFilesChange}
-            style={{ display: 'none' }}
-          />
-        </div>
+        )}
       </div>
 
       <hr style={{ borderTop: '1px solid var(--color-border-soft)', margin: '8px 0' }} />
@@ -733,16 +766,18 @@ export default function EnquiryEditor({ onSuccess }) {
             type="button"
             role="switch"
             aria-checked={!!form.maintenance_mode}
-            onClick={() => setForm(prev => ({ ...prev, maintenance_mode: !prev.maintenance_mode }))}
+            onClick={isWritable ? () => setForm(prev => ({ ...prev, maintenance_mode: !prev.maintenance_mode })) : undefined}
+            disabled={!isWritable}
             style={{
               flexShrink: 0,
               width: '48px', height: '28px',
               borderRadius: '99px',
               border: 'none',
-              cursor: 'pointer',
+              cursor: isWritable ? 'pointer' : 'not-allowed',
               background: form.maintenance_mode ? '#E8890C' : '#D4C9B5',
               position: 'relative',
               transition: 'background 0.25s',
+              opacity: isWritable ? 1 : 0.6,
             }}
             aria-label="Toggle maintenance mode"
           >
@@ -758,24 +793,27 @@ export default function EnquiryEditor({ onSuccess }) {
         </div>
       </div>
 
-      <div style={{ display: 'flex', justifyContent: 'space-between', gap: '12px', marginTop: '12px', borderTop: '1px solid var(--color-border-soft)', paddingTop: '16px' }}>        <button
-          type="button"
-          onClick={handleReset}
-          className="btn-outline"
-          style={{ padding: '10px 20px', fontSize: '11px' }}
-        >
-          Reset Defaults
-        </button>
+      {isWritable && (
+        <div style={{ display: 'flex', justifyContent: 'space-between', gap: '12px', marginTop: '12px', borderTop: '1px solid var(--color-border-soft)', paddingTop: '16px' }}>
+          <button
+            type="button"
+            onClick={handleReset}
+            className="btn-outline"
+            style={{ padding: '10px 20px', fontSize: '11px' }}
+          >
+            Reset Defaults
+          </button>
 
-        <button
-          type="submit"
-          disabled={saving}
-          className="btn-primary"
-          style={{ padding: '10px 24px', fontSize: '11px', display: 'flex', alignItems: 'center', gap: '8px' }}
-        >
-          {saving ? 'Saving...' : 'Save Settings'}
-        </button>
-      </div>
+          <button
+            type="submit"
+            disabled={saving}
+            className="btn-primary"
+            style={{ padding: '10px 24px', fontSize: '11px', display: 'flex', alignItems: 'center', gap: '8px' }}
+          >
+            {saving ? 'Saving...' : 'Save Settings'}
+          </button>
+        </div>
+      )}
     </form>
   );
 }

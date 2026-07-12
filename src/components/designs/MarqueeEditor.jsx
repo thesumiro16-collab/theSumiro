@@ -15,8 +15,9 @@ const DEFAULT_MARQUEE = [
 ];
 
 export default function MarqueeEditor({ onSuccess }) {
-  const { user } = useAuth();
+  const { user, canWrite } = useAuth();
   const { addToast } = useToast();
+  const isWritable = canWrite ? canWrite('ticker') : true;
   const [tags, setTags] = useState([]);
   const [newTag, setNewTag] = useState('');
   const [loading, setLoading] = useState(true);
@@ -213,24 +214,26 @@ export default function MarqueeEditor({ onSuccess }) {
                 color: '#333333',
               }}>
                 {tag}
-                <button
-                  type="button"
-                  onClick={() => handleRemoveTag(idx)}
-                  style={{
-                    background: 'none',
-                    border: 'none',
-                    color: '#EF4444',
-                    cursor: 'pointer',
-                    fontSize: '14px',
-                    fontWeight: 700,
-                    padding: 0,
-                    display: 'flex',
-                    alignItems: 'center',
-                  }}
-                  aria-label={`Remove ${tag}`}
-                >
-                  &times;
-                </button>
+                 {isWritable && (
+                  <button
+                    type="button"
+                    onClick={() => handleRemoveTag(idx)}
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      color: '#EF4444',
+                      cursor: 'pointer',
+                      fontSize: '14px',
+                      fontWeight: 700,
+                      padding: 0,
+                      display: 'flex',
+                      alignItems: 'center',
+                    }}
+                    aria-label={`Remove ${tag}`}
+                  >
+                    &times;
+                  </button>
+                 )}
               </span>
             ))
           )}
@@ -238,55 +241,63 @@ export default function MarqueeEditor({ onSuccess }) {
       </div>
 
       {/* Add New Item */}
-      <form onSubmit={handleAddTag} style={{ display: 'flex', gap: '8px' }}>
-        <input
-          type="text"
-          placeholder="Add ticker item (e.g. Linen Fabrics)..."
-          value={newTag}
-          onChange={(e) => setNewTag(e.target.value)}
-          style={{
-            flex: 1,
-            background: 'var(--color-bg-soft)',
-            border: '1.5px solid var(--color-border)',
-            borderRadius: '8px',
-            padding: '10px 14px',
-            fontFamily: 'var(--font-sans)',
-            fontSize: '13px',
-            outline: 'none',
-          }}
-          onFocus={e => e.target.style.borderColor = '#E8890C'}
-          onBlur={e => e.target.style.borderColor = 'var(--color-border)'}
-        />
-        <button
-          type="submit"
-          className="btn-primary"
-          style={{ padding: '0 20px', fontSize: '11px', flexShrink: 0 }}
-        >
-          Add Item
-        </button>
-      </form>
+      {isWritable ? (
+        <form onSubmit={handleAddTag} style={{ display: 'flex', gap: '8px' }}>
+          <input
+            type="text"
+            placeholder="Add ticker item (e.g. Linen Fabrics)..."
+            value={newTag}
+            onChange={(e) => setNewTag(e.target.value)}
+            style={{
+              flex: 1,
+              background: 'var(--color-bg-soft)',
+              border: '1.5px solid var(--color-border)',
+              borderRadius: '8px',
+              padding: '10px 14px',
+              fontFamily: 'var(--font-sans)',
+              fontSize: '13px',
+              outline: 'none',
+            }}
+            onFocus={e => e.target.style.borderColor = '#E8890C'}
+            onBlur={e => e.target.style.borderColor = 'var(--color-border)'}
+          />
+          <button
+            type="submit"
+            className="btn-primary"
+            style={{ padding: '0 20px', fontSize: '11px', flexShrink: 0 }}
+          >
+            Add Item
+          </button>
+        </form>
+      ) : (
+        <p style={{ fontFamily: 'var(--font-sans)', fontSize: '12px', color: '#B45309', background: '#FEF9EE', padding: '10px 14px', borderRadius: '8px', border: '1px solid #FDE68A' }}>
+          You have read-only access. You cannot modify the marquee ticker list.
+        </p>
+      )}
 
       {/* Footer Actions */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', gap: '12px', marginTop: '12px', borderTop: '1px solid var(--color-border-soft)', paddingTop: '16px' }}>
-        <button
-          type="button"
-          onClick={handleReset}
-          className="btn-outline"
-          style={{ padding: '10px 20px', fontSize: '11px' }}
-        >
-          Reset Defaults
-        </button>
+      {isWritable && (
+        <div style={{ display: 'flex', justifyContent: 'space-between', gap: '12px', marginTop: '12px', borderTop: '1px solid var(--color-border-soft)', paddingTop: '16px' }}>
+          <button
+            type="button"
+            onClick={handleReset}
+            className="btn-outline"
+            style={{ padding: '10px 20px', fontSize: '11px' }}
+          >
+            Reset Defaults
+          </button>
 
-        <button
-          type="button"
-          disabled={saving}
-          onClick={handleSave}
-          className="btn-primary"
-          style={{ padding: '10px 24px', fontSize: '11px', display: 'flex', alignItems: 'center', gap: '8px' }}
-        >
-          {saving ? 'Saving...' : 'Save Ticker'}
-        </button>
-      </div>
+          <button
+            type="button"
+            disabled={saving}
+            onClick={handleSave}
+            className="btn-primary"
+            style={{ padding: '10px 24px', fontSize: '11px', display: 'flex', alignItems: 'center', gap: '8px' }}
+          >
+            {saving ? 'Saving...' : 'Save Ticker'}
+          </button>
+        </div>
+      )}
     </div>
   );
 }

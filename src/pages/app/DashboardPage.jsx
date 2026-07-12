@@ -4,10 +4,13 @@ import DesignCard from '../../components/designs/DesignCard';
 import DesignForm from '../../components/designs/DesignForm';
 import Modal from '../../components/ui/Modal';
 import Pagination from '../../components/ui/Pagination';
+import { useAuth } from '../../contexts/AuthContext';
 
 export default function DashboardPage() {
   const { designs, loading, error, page, totalPages, searchTerm, setPage, setSearchTerm, refetch } = useDesigns();
   const [modalOpen, setModalOpen] = useState(false);
+  const { canWrite } = useAuth();
+  const isWritable = canWrite('dashboard');
 
   return (
     <div className="animate-fade-in" style={{ minHeight: 'calc(100vh - 60px)', background: 'var(--color-bg-soft)' }}>
@@ -56,17 +59,19 @@ export default function DashboardPage() {
                 Search, add, and manage designs in your fabric archive
               </p>
             </div>
-            <button
-              id="dashboard-add-design-btn"
-              onClick={() => setModalOpen(true)}
-              className="btn-primary"
-              style={{ padding: '11px 22px', gap: '8px', display: 'flex', alignItems: 'center', fontSize: '11px' }}
-            >
-              <svg width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-              </svg>
-              Add Design
-            </button>
+            {isWritable && (
+              <button
+                id="dashboard-add-design-btn"
+                onClick={() => setModalOpen(true)}
+                className="btn-primary"
+                style={{ padding: '11px 22px', gap: '8px', display: 'flex', alignItems: 'center', fontSize: '11px' }}
+              >
+                <svg width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                </svg>
+                Add Design
+              </button>
+            )}
           </div>
 
           {/* Search Bar */}
@@ -186,17 +191,19 @@ export default function DashboardPage() {
             <p style={{ fontFamily: 'var(--font-sans)', fontSize: '14px', color: '#737373', marginBottom: '32px', lineHeight: 1.7, maxWidth: '340px', margin: '0 auto 32px' }}>
               Your fabric catalog is empty. Upload your first design to get started.
             </p>
-            <button
-              id="dashboard-add-first-design-btn"
-              onClick={() => setModalOpen(true)}
-              className="btn-primary"
-              style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}
-            >
-              <svg width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-              </svg>
-              Add First Design
-            </button>
+            {isWritable && (
+              <button
+                id="dashboard-add-first-design-btn"
+                onClick={() => setModalOpen(true)}
+                className="btn-primary"
+                style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}
+              >
+                <svg width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                </svg>
+                Add First Design
+              </button>
+            )}
           </div>
         )}
 

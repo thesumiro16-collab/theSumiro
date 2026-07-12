@@ -10,9 +10,9 @@ export const DEFAULT_SETTINGS = {
   collection_slides: [],
   maintenance_mode: false,
   // About / Our Story
-  about_founding_year: '2003',
+  about_founding_year: '2006',
   about_story_title: "Rooted in Surat's Textile Heritage",
-  about_story_p1: "We started The Sumiro back in 2003, right here in Surat — a city that lives and breathes textiles. What began as a small operation has grown into a full-fledged fabric design factory, but our approach hasn't changed much. We still care about every design the same way we did on day one.",
+  about_story_p1: "We started The Sumiro back in 2006, right here in Surat — a city that lives and breathes textiles. What began as a small operation has grown into a full-fledged fabric design factory, but our approach hasn't changed much. We still care about every design the same way we did on day one.",
   about_story_p2: "Our team includes designers and weavers who have spent years — some even decades — doing this. We combine that experience with modern machines to make sure you get great quality without long waiting times.",
   // SEO
   seo_keywords: 'fabric design, silk brocade, jacquard weave, zari embroidery, Surat textiles, premium fabrics India, custom fabric manufacturer, The Sumiro',

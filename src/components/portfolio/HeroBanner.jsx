@@ -62,7 +62,7 @@ function StatItem({ value, label, borderRight, started }) {
 
 export default function HeroBanner() {
   const { settings } = useSettings();
-  const foundingYear = parseInt(settings.about_founding_year, 10) || 2003;
+  const foundingYear = parseInt(settings.about_founding_year, 10) || 2006;
   const yearsOfHeritage = Math.max(1, new Date().getFullYear() - foundingYear);
   const statsRef = useRef(null);
   const [statsStarted, setStatsStarted] = useState(false);

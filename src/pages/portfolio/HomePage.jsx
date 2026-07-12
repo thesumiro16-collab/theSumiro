@@ -3,6 +3,15 @@ import HeroBanner from '../../components/portfolio/HeroBanner';
 import Seo from '../../components/ui/Seo';
 import { supabase } from '../../lib/supabase';
 import { useSettings } from '../../hooks/useSettings';
+import Spinner from '../../components/ui/Spinner';
+
+const optimizeCloudinaryUrl = (url) => {
+  if (!url) return '';
+  if (url.includes('cloudinary.com') && url.includes('/upload/')) {
+    return url.replace('/upload/', '/upload/f_auto,q_auto/');
+  }
+  return url;
+};
 
 const iconProps = {
   width: 24, height: 24, fill: 'none', stroke: 'currentColor',
@@ -74,8 +83,8 @@ const slides = [
 ];
 
 export default function HomePage() {
-  const { settings } = useSettings();
-  const foundingYear = parseInt(settings.about_founding_year, 10) || 2003;
+  const { settings, loading } = useSettings();
+  const foundingYear = parseInt(settings.about_founding_year, 10) || 2006;
   const yearsOfHeritage = Math.max(1, new Date().getFullYear() - foundingYear);
   const [activeSlide, setActiveSlide] = useState(0);
   const [isPlayingFactoryVideo, setIsPlayingFactoryVideo] = useState(false);
@@ -153,7 +162,10 @@ export default function HomePage() {
     return () => clearInterval(autoPlayRef.current);
   }, [activeSlides.length]);
 
-  const goTo = (idx) => {
+  if (loading) {
+    return <Spinner fullPage />;
+  }
+    const goTo = (idx) => {
     clearInterval(autoPlayRef.current);
     setActiveSlide(idx);
     autoPlayRef.current = setInterval(() => {
@@ -265,7 +277,7 @@ export default function HomePage() {
           >
             {activeSlides.map((slide, idx) => (
               <div
-                key={slide.id}
+                key={`${slide.image}_${idx}`}
                 style={{
                   position: idx === activeSlide ? 'relative' : 'absolute',
                   inset: 0,
@@ -274,56 +286,89 @@ export default function HomePage() {
                   pointerEvents: idx === activeSlide ? 'auto' : 'none',
                 }}
               >
-                <div style={{ paddingTop: '52%', position: 'relative' }}>
+                <div style={{
+                  position: 'relative',
+                  width: '100%',
+                  minHeight: 'clamp(320px, 48vw, 540px)',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'flex-end',
+                }}>
+                  {/* Floating Tag Top Left */}
+                  <span style={{
+                    position: 'absolute',
+                    top: 'clamp(16px, 4vw, 28px)',
+                    left: 'clamp(16px, 4vw, 28px)',
+                    zIndex: 3,
+                    fontFamily: 'var(--font-sans)', fontSize: 'clamp(9px, 1.2vw, 11px)', fontWeight: 700, letterSpacing: '0.2em',
+                    textTransform: 'uppercase', color: '#E8890C',
+                    background: 'rgba(232, 137, 12, 0.15)', border: '1px solid rgba(232, 137, 12, 0.4)',
+                    backdropFilter: 'blur(8px)',
+                    padding: '5px 12px', borderRadius: '99px', display: 'inline-block',
+                    boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                  }}>{slide.tag}</span>
+
                   <img
-                    src={slide.image}
+                    src={optimizeCloudinaryUrl(slide.image)}
                     alt={slide.title}
                     loading="lazy"
                     style={{
                       position: 'absolute', inset: 0,
                       width: '100%', height: '100%',
                       objectFit: 'cover',
+                      zIndex: 0,
                     }}
                   />
                   {/* Gradient */}
                   <div style={{
                     position: 'absolute', inset: 0,
-                    background: 'linear-gradient(to top, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0.1) 50%, transparent 100%)',
+                    background: 'linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.3) 60%, transparent 100%)',
+                    zIndex: 1,
                   }} />
                   {/* Text Overlay */}
                   <div style={{
-                    position: 'absolute', bottom: 0, left: 0, right: 0,
-                    padding: 'clamp(16px, 4vw, 40px) clamp(16px, 4vw, 40px) clamp(14px, 3vw, 36px)',
-                    display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px',
+                    position: 'relative',
+                    zIndex: 2,
+                    padding: 'clamp(20px, 5vw, 40px)',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: 'clamp(10px, 2vw, 14px)',
+                    boxSizing: 'border-box',
+                    width: '100%',
                   }}>
-                    <div>
-                      <span style={{
-                        fontFamily: 'var(--font-sans)', fontSize: '9px', fontWeight: 700, letterSpacing: '0.2em',
-                        textTransform: 'uppercase', color: '#E8890C',
-                        background: 'rgba(232,137,12,0.15)', border: '1px solid rgba(232,137,12,0.4)',
-                        padding: '4px 10px', borderRadius: '99px', display: 'inline-block', marginBottom: '8px',
-                      }}>{slide.tag}</span>
+                    <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center' }}>
+                      {/* Slide counter */}
+                      <div style={{
+                        fontFamily: 'var(--font-sans)', fontSize: 'clamp(11px, 1.5vw, 13px)',
+                        color: 'rgba(255,255,255,0.6)',
+                        letterSpacing: '0.1em',
+                        display: 'flex', alignItems: 'center',
+                      }}>
+                        <span style={{ fontSize: 'clamp(16px, 2.5vw, 22px)', fontFamily: 'var(--font-serif)', color: '#FFFFFF', fontWeight: 300 }}>
+                          {String(idx + 1).padStart(2, '0')}
+                        </span>
+                        {' / '}{String(activeSlides.length).padStart(2, '0')}
+                      </div>
+                    </div>
+
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 'clamp(8px, 1.5vw, 12px)' }}>
                       <h3 style={{
                         fontFamily: 'var(--font-serif)',
-                        fontSize: 'clamp(1rem, 3vw, 2.1rem)',
+                        fontSize: 'clamp(1.25rem, 3.5vw, 2.3rem)',
                         fontWeight: 400, color: '#FFFFFF',
-                        lineHeight: 1.15, marginBottom: '6px',
+                        lineHeight: 1.2,
+                        margin: 0,
                       }}>{slide.title}</h3>
-                      <p style={{ fontFamily: 'var(--font-sans)', fontSize: 'clamp(11px, 1.5vw, 13px)', color: 'rgba(255,255,255,0.72)', lineHeight: 1.5 }}>
+                      
+                      <p style={{
+                        fontFamily: 'var(--font-sans)',
+                        fontSize: 'clamp(12px, 1.8vw, 14.5px)',
+                        color: 'rgba(255,255,255,0.85)',
+                        lineHeight: 1.55,
+                        margin: 0,
+                      }}>
                         {slide.subtitle}
                       </p>
-                    </div>
-                    {/* Slide counter */}
-                    <div style={{
-                      fontFamily: 'var(--font-sans)', fontSize: '11px',
-                      color: 'rgba(255,255,255,0.5)',
-                      letterSpacing: '0.1em',
-                      display: 'flex', alignItems: 'center', flexShrink: 0,
-                    }}>
-                      <span style={{ fontSize: 'clamp(16px, 3vw, 22px)', fontFamily: 'var(--font-serif)', color: '#FFFFFF', fontWeight: 300 }}>
-                        {String(idx + 1).padStart(2, '0')}
-                      </span>
-                      {' / '}{String(activeSlides.length).padStart(2, '0')}
                     </div>
                   </div>
                 </div>
@@ -389,6 +434,9 @@ export default function HomePage() {
                   src={settings.home_video_url}
                   poster={settings.home_video_thumbnail || undefined}
                   controls
+                  controlsList="nodownload noplaybackrate"
+                  disablePictureInPicture
+                  onContextMenu={e => e.preventDefault()}
                   autoPlay
                   muted
                   loop
@@ -396,7 +444,7 @@ export default function HomePage() {
                   style={{
                     position: 'absolute', inset: 0,
                     width: '100%', height: '100%',
-                    objectFit: 'contain',
+                    objectFit: 'cover',
                   }}
                 />
               ) : !isPlayingFactoryVideo ? (

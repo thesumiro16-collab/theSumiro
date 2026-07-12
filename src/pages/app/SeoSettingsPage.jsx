@@ -57,9 +57,10 @@ function Field({ label, hint, children }) {
 }
 
 export default function SeoSettingsPage() {
-  const { user } = useAuth();
+  const { user, canWrite } = useAuth();
   const { addToast } = useToast();
   const { refetch } = useSettings();
+  const isWritable = canWrite ? canWrite('seo') : true;
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
@@ -155,48 +156,53 @@ export default function SeoSettingsPage() {
 
   return (
     <div className="animate-fade-in" style={{ minHeight: 'calc(100vh - 60px)', background: 'var(--color-bg-soft)' }}>
-      <div className="admin-page-inner">
-
+      <div className="admin-page-inner" style={{ maxWidth: '800px' }}>
+        
         {/* Page Header */}
         <div className="animate-fade-up" style={{ marginBottom: '36px' }}>
-          <span className="pill-label" style={{ marginBottom: '14px', display: 'inline-flex' }}>
-            <svg width="11" height="11" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35M17 11a6 6 0 11-12 0 6 6 0 0112 0z" />
-            </svg>
-            SEO
-          </span>
-          <h1 style={{ fontFamily: 'var(--font-serif)', fontSize: 'clamp(1.8rem, 4vw, 2.8rem)', fontWeight: 400, color: '#0A0A0A', lineHeight: 1.15, marginTop: '10px' }}>
-            SEO Settings
-          </h1>
-          <p style={{ fontFamily: 'var(--font-sans)', fontSize: '13px', color: '#737373', marginTop: '6px' }}>
-            Manage title, description, keywords and social sharing tags for each page
-          </p>
+          <div>
+            <span className="pill-label" style={{ marginBottom: '14px', display: 'inline-flex' }}>
+              <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#E8890C', display: 'inline-block' }} />
+              Metadata
+            </span>
+            <h1 style={{
+              fontFamily: 'var(--font-serif)',
+              fontSize: 'clamp(1.8rem, 4vw, 2.8rem)',
+              fontWeight: 400, color: '#0A0A0A',
+              lineHeight: 1.15, marginTop: '10px',
+            }}>
+              SEO Settings
+            </h1>
+            <p style={{ fontFamily: 'var(--font-sans)', fontSize: '13px', color: '#737373', marginTop: '6px' }}>
+              Optimize page titles, descriptions, and keywords for search engine discovery
+            </p>
+          </div>
         </div>
 
-        <form onSubmit={handleSave} style={{ display: 'flex', flexDirection: 'column', gap: '24px', maxWidth: '800px' }}>
+        {/* Form Container */}
+        <form onSubmit={handleSave} className="animate-fade-up flex flex-col gap-6">
+          {!isWritable && (
+            <p style={{ fontFamily: 'var(--font-sans)', fontSize: '12px', color: '#B45309', background: '#FEF9EE', padding: '10px 14px', borderRadius: '8px', border: '1px solid #FDE68A', margin: 0 }}>
+              You have read-only access. You cannot edit the SEO settings.
+            </p>
+          )}
 
-          {/* Global SEO */}
-          <Section title="Global SEO" icon={
+          {/* Global Configurations */}
+          <Section title="Global Configurations" icon={
             <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              <path strokeLinecap="round" strokeLinejoin="round" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
             </svg>
           }>
-            <Field label="Global Keywords" hint="Comma-separated keywords used across all pages. Include fabric types, materials, location.">
-              <textarea value={form.seo_keywords} onChange={set('seo_keywords')} style={taStyle} rows={3} onFocus={focus} onBlur={blur} />
+            <Field label="Global Keywords" hint="Comma-separated tags (e.g. Surat textile, Brocades).">
+              <textarea value={form.seo_keywords} onChange={set('seo_keywords')} disabled={!isWritable} style={taStyle} rows={3} onFocus={focus} onBlur={blur} />
             </Field>
-            <Field label="Default OG / Social Share Image URL" hint="Image shown when someone shares your site on WhatsApp, Instagram, LinkedIn. Recommended: 1200×630px. Upload to Cloudinary and paste the URL here.">
-              <input type="url" value={form.seo_og_image} onChange={set('seo_og_image')} placeholder="https://res.cloudinary.com/thesumiro/..." style={inputStyle} onFocus={focus} onBlur={blur} />
-              {form.seo_og_image && (
-                <div style={{ marginTop: '10px', borderRadius: '8px', overflow: 'hidden', border: '1px solid var(--color-border)', maxWidth: '300px' }}>
-                  <img src={form.seo_og_image} alt="OG preview" style={{ width: '100%', display: 'block', objectFit: 'cover' }} />
-                </div>
-              )}
+            <Field label="Open Graph / Shared Cover Image URL" hint="Asset displayed during WhatsApp/Social media link sharing.">
+              <input type="url" value={form.seo_og_image} onChange={set('seo_og_image')} disabled={!isWritable} placeholder="https://res.cloudinary.com/thesumiro/..." style={inputStyle} onFocus={focus} onBlur={blur} />
             </Field>
-            <Field label="Google Search Console Verification Code" hint="The content value from your Google site verification meta tag. Found in Google Search Console → Settings → Ownership verification.">
-              <input type="text" value={form.seo_google_verification} onChange={set('seo_google_verification')} placeholder="N7yk9uw7RrScjpIep5..." style={inputStyle} onFocus={focus} onBlur={blur} />
+            <Field label="Google Search Console verification key" hint="e.g. verification meta content value.">
+              <input type="text" value={form.seo_google_verification} onChange={set('seo_google_verification')} disabled={!isWritable} placeholder="N7yk9uw7RrScjpIep5..." style={inputStyle} onFocus={focus} onBlur={blur} />
             </Field>
-
-            <Field label="Favicon" hint="The small icon shown in browser tabs, Google search results, and bookmarks. Recommended: 512×512px PNG. Drag & drop or click to upload.">
+            <Field label="Website Favicon" hint="Upload custom favicon file.">
               <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
                 {/* Current favicon preview */}
                 <div style={{ flexShrink: 0 }}>
@@ -211,57 +217,63 @@ export default function SeoSettingsPage() {
                 </div>
 
                 {/* Upload zone */}
-                <div
-                  onDragOver={e => { e.preventDefault(); setDragOverFavicon(true); }}
-                  onDragLeave={() => setDragOverFavicon(false)}
-                  onDrop={e => {
-                    e.preventDefault();
-                    setDragOverFavicon(false);
-                    const file = e.dataTransfer.files?.[0];
-                    if (file) handleFaviconUpload(file);
-                  }}
-                  onClick={() => document.getElementById('favicon-upload-input').click()}
-                  style={{
-                    flex: 1, minWidth: '200px',
-                    border: `2px dashed ${dragOverFavicon ? '#E8890C' : 'var(--color-border)'}`,
-                    borderRadius: '10px', padding: '20px', textAlign: 'center',
-                    cursor: faviconUploading ? 'not-allowed' : 'pointer',
-                    background: dragOverFavicon ? 'rgba(232,137,12,0.04)' : 'var(--color-bg-soft)',
-                    transition: 'border-color 0.2s, background 0.2s',
-                    opacity: faviconUploading ? 0.7 : 1,
-                  }}
-                >
-                  {faviconUploading ? (
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px' }}>
-                      <div style={{ width: '18px', height: '18px', border: '2px solid #E5E0D8', borderTopColor: '#E8890C', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
-                      <span style={{ fontFamily: 'var(--font-sans)', fontSize: '12px', color: '#737373' }}>Uploading…</span>
-                    </div>
-                  ) : (
-                    <>
-                      <div style={{ color: dragOverFavicon ? '#E8890C' : '#A3A3A3', display: 'flex', justifyContent: 'center', marginBottom: '6px' }}>
-                        <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                        </svg>
+                {isWritable ? (
+                  <div
+                    onDragOver={e => { e.preventDefault(); setDragOverFavicon(true); }}
+                    onDragLeave={() => setDragOverFavicon(false)}
+                    onDrop={e => {
+                      e.preventDefault();
+                      setDragOverFavicon(false);
+                      const file = e.dataTransfer.files?.[0];
+                      if (file) handleFaviconUpload(file);
+                    }}
+                    onClick={() => document.getElementById('favicon-upload-input').click()}
+                    style={{
+                      flex: 1, minWidth: '200px',
+                      border: `2px dashed ${dragOverFavicon ? '#E8890C' : 'var(--color-border)'}`,
+                      borderRadius: '10px', padding: '20px', textAlign: 'center',
+                      cursor: faviconUploading ? 'not-allowed' : 'pointer',
+                      background: dragOverFavicon ? 'rgba(232,137,12,0.04)' : 'var(--color-bg-soft)',
+                      transition: 'border-color 0.2s, background 0.2s',
+                      opacity: faviconUploading ? 0.7 : 1,
+                    }}
+                  >
+                    {faviconUploading ? (
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px' }}>
+                        <div style={{ width: '18px', height: '18px', border: '2px solid #E5E0D8', borderTopColor: '#E8890C', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+                        <span style={{ fontFamily: 'var(--font-sans)', fontSize: '12px', color: '#737373' }}>Uploading…</span>
                       </div>
-                      <p style={{ fontFamily: 'var(--font-sans)', fontSize: '12px', fontWeight: 600, color: 'var(--color-text-primary)', margin: 0 }}>
-                        {dragOverFavicon ? 'Drop to upload' : 'Drag & drop or click to upload'}
-                      </p>
-                      <p style={{ fontFamily: 'var(--font-sans)', fontSize: '10px', color: '#A3A3A3', marginTop: '3px' }}>
-                        PNG · JPG · SVG · 512×512px recommended
-                      </p>
-                    </>
-                  )}
-                  <input
-                    id="favicon-upload-input"
-                    type="file"
-                    accept="image/png,image/jpeg,image/svg+xml,image/x-icon,image/webp"
-                    onChange={e => { if (e.target.files?.[0]) handleFaviconUpload(e.target.files[0]); e.target.value = ''; }}
-                    style={{ display: 'none' }}
-                  />
-                </div>
+                    ) : (
+                      <>
+                        <div style={{ color: dragOverFavicon ? '#E8890C' : '#A3A3A3', display: 'flex', justifyContent: 'center', marginBottom: '6px' }}>
+                          <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                          </svg>
+                        </div>
+                        <p style={{ fontFamily: 'var(--font-sans)', fontSize: '12px', fontWeight: 600, color: 'var(--color-text-primary)', margin: 0 }}>
+                          {dragOverFavicon ? 'Drop to upload' : 'Drag & drop or click to upload'}
+                        </p>
+                        <p style={{ fontFamily: 'var(--font-sans)', fontSize: '10px', color: '#A3A3A3', marginTop: '3px' }}>
+                          PNG · JPG · SVG · 512×512px recommended
+                        </p>
+                      </>
+                    )}
+                    <input
+                      id="favicon-upload-input"
+                      type="file"
+                      accept="image/png,image/jpeg,image/svg+xml,image/x-icon,image/webp"
+                      onChange={e => { if (e.target.files?.[0]) handleFaviconUpload(e.target.files[0]); e.target.value = ''; }}
+                      style={{ display: 'none' }}
+                    />
+                  </div>
+                ) : (
+                  <p style={{ fontFamily: 'var(--font-sans)', fontSize: '12px', color: '#B45309', background: '#FEF9EE', padding: '10px 14px', borderRadius: '8px', border: '1px solid #FDE68A', flex: 1 }}>
+                    Favicon upload disabled in read-only mode.
+                  </p>
+                )}
 
                 {/* Remove button */}
-                {form.seo_favicon_url && (
+                {form.seo_favicon_url && isWritable && (
                   <button
                     type="button"
                     onClick={() => setForm(prev => ({ ...prev, seo_favicon_url: '' }))}
@@ -274,20 +286,20 @@ export default function SeoSettingsPage() {
             </Field>
           </Section>
 
-          {/* Home Page */}
-          <Section title="Home Page" icon={
+          {/* Homepage */}
+          <Section title="Homepage" icon={
             <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
             </svg>
           }>
-            <Field label="Page Title" hint="Shown in browser tab and Google search results. Keep under 60 characters.">
-              <input type="text" value={form.seo_home_title} onChange={set('seo_home_title')} style={inputStyle} onFocus={focus} onBlur={blur} />
+            <Field label="Page Title" hint="Keep under 60 characters.">
+              <input type="text" value={form.seo_home_title} onChange={set('seo_home_title')} disabled={!isWritable} style={inputStyle} onFocus={focus} onBlur={blur} />
               <p style={{ ...hintStyle, color: form.seo_home_title.length > 60 ? '#DC2626' : '#A3A3A3' }}>
                 {form.seo_home_title.length}/60 characters
               </p>
             </Field>
-            <Field label="Meta Description" hint="Shown under your title in Google search results. Keep between 120–160 characters.">
-              <textarea value={form.seo_home_description} onChange={set('seo_home_description')} style={taStyle} rows={3} onFocus={focus} onBlur={blur} />
+            <Field label="Meta Description" hint="Keep between 120–160 characters.">
+              <textarea value={form.seo_home_description} onChange={set('seo_home_description')} disabled={!isWritable} style={taStyle} rows={3} onFocus={focus} onBlur={blur} />
               <p style={{ ...hintStyle, color: form.seo_home_description.length > 160 ? '#DC2626' : '#A3A3A3' }}>
                 {form.seo_home_description.length}/160 characters
               </p>
@@ -301,13 +313,13 @@ export default function SeoSettingsPage() {
             </svg>
           }>
             <Field label="Page Title" hint="Keep under 60 characters.">
-              <input type="text" value={form.seo_about_title} onChange={set('seo_about_title')} style={inputStyle} onFocus={focus} onBlur={blur} />
+              <input type="text" value={form.seo_about_title} onChange={set('seo_about_title')} disabled={!isWritable} style={inputStyle} onFocus={focus} onBlur={blur} />
               <p style={{ ...hintStyle, color: form.seo_about_title.length > 60 ? '#DC2626' : '#A3A3A3' }}>
                 {form.seo_about_title.length}/60 characters
               </p>
             </Field>
             <Field label="Meta Description" hint="Keep between 120–160 characters.">
-              <textarea value={form.seo_about_description} onChange={set('seo_about_description')} style={taStyle} rows={3} onFocus={focus} onBlur={blur} />
+              <textarea value={form.seo_about_description} onChange={set('seo_about_description')} disabled={!isWritable} style={taStyle} rows={3} onFocus={focus} onBlur={blur} />
               <p style={{ ...hintStyle, color: form.seo_about_description.length > 160 ? '#DC2626' : '#A3A3A3' }}>
                 {form.seo_about_description.length}/160 characters
               </p>
@@ -321,13 +333,13 @@ export default function SeoSettingsPage() {
             </svg>
           }>
             <Field label="Page Title" hint="Keep under 60 characters.">
-              <input type="text" value={form.seo_contact_title} onChange={set('seo_contact_title')} style={inputStyle} onFocus={focus} onBlur={blur} />
+              <input type="text" value={form.seo_contact_title} onChange={set('seo_contact_title')} disabled={!isWritable} style={inputStyle} onFocus={focus} onBlur={blur} />
               <p style={{ ...hintStyle, color: form.seo_contact_title.length > 60 ? '#DC2626' : '#A3A3A3' }}>
                 {form.seo_contact_title.length}/60 characters
               </p>
             </Field>
             <Field label="Meta Description" hint="Keep between 120–160 characters.">
-              <textarea value={form.seo_contact_description} onChange={set('seo_contact_description')} style={taStyle} rows={3} onFocus={focus} onBlur={blur} />
+              <textarea value={form.seo_contact_description} onChange={set('seo_contact_description')} disabled={!isWritable} style={taStyle} rows={3} onFocus={focus} onBlur={blur} />
               <p style={{ ...hintStyle, color: form.seo_contact_description.length > 160 ? '#DC2626' : '#A3A3A3' }}>
                 {form.seo_contact_description.length}/160 characters
               </p>
@@ -335,16 +347,24 @@ export default function SeoSettingsPage() {
           </Section>
 
           {/* Actions */}
-          <div style={{ display: 'flex', justifyContent: 'flex-end', paddingBottom: '40px' }}>
-            <button type="submit" disabled={saving} className="btn-primary" style={{ padding: '12px 32px', fontSize: '11px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-              {saving ? (
-                <>
-                  <div style={{ width: '14px', height: '14px', border: '2px solid rgba(255,255,255,0.4)', borderTopColor: '#FFFFFF', borderRadius: '50%', animation: 'spin 0.7s linear infinite' }} />
-                  Saving…
-                </>
-              ) : 'Save SEO Settings'}
-            </button>
-          </div>
+          {isWritable ? (
+            <div style={{ display: 'flex', justifyContent: 'flex-end', paddingBottom: '40px' }}>
+              <button type="submit" disabled={saving} className="btn-primary" style={{ padding: '12px 32px', fontSize: '11px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                {saving ? (
+                  <>
+                    <div style={{ width: '14px', height: '14px', border: '2px solid rgba(255,255,255,0.4)', borderTopColor: '#FFFFFF', borderRadius: '50%', animation: 'spin 0.7s linear infinite' }} />
+                    Saving…
+                  </>
+                ) : 'Save SEO Settings'}
+              </button>
+            </div>
+          ) : (
+            <div style={{ paddingBottom: '40px' }}>
+              <p style={{ fontFamily: 'var(--font-sans)', fontSize: '12px', color: '#B45309', background: '#FEF9EE', padding: '10px 14px', borderRadius: '8px', border: '1px solid #FDE68A', margin: 0 }}>
+                You have read-only access. You cannot modify SEO settings.
+              </p>
+            </div>
+          )}
         </form>
       </div>
     </div>

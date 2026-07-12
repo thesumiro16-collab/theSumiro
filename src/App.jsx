@@ -28,6 +28,7 @@ const TickerPage = lazy(() => import('./pages/app/TickerPage'));
 const EnquirySettingsPage = lazy(() => import('./pages/app/EnquirySettingsPage'));
 const AboutEditorPage = lazy(() => import('./pages/app/AboutEditorPage'));
 const SeoSettingsPage = lazy(() => import('./pages/app/SeoSettingsPage'));
+const UserManagementPage = lazy(() => import('./pages/app/UserManagementPage'));
 
 /* Minimal loading spinner shown while lazy chunks load */
 function PageLoader() {
@@ -58,9 +59,13 @@ function PublicLayout() {
   const { settings, loading } = useSettings();
   const { user } = useAuth();
 
+  if (loading) {
+    return <PageLoader />;
+  }
+
   // When maintenance mode is on, send public visitors to the maintenance page.
   // Logged-in users (admins) bypass it so they can still preview the live site.
-  if (!loading && settings.maintenance_mode && !user) {
+  if (settings.maintenance_mode && !user) {
     return <Navigate to="/maintenance" replace />;
   }
 
@@ -109,6 +114,7 @@ export default function App() {
                       <Route path="/app/settings" element={<EnquirySettingsPage />} />
                       <Route path="/app/about-editor" element={<AboutEditorPage />} />
                       <Route path="/app/seo" element={<SeoSettingsPage />} />
+                      <Route path="/app/users" element={<UserManagementPage />} />
                     </Route>
                   </Route>
 
@@ -162,8 +168,9 @@ export default function App() {
                         <Route path="/app/inbox" element={<InboxPage />} />
                         <Route path="/app/ticker" element={<TickerPage />} />
                         <Route path="/app/settings" element={<EnquirySettingsPage />} />
-                      <Route path="/app/about-editor" element={<AboutEditorPage />} />
-                      <Route path="/app/seo" element={<SeoSettingsPage />} />
+                        <Route path="/app/about-editor" element={<AboutEditorPage />} />
+                        <Route path="/app/seo" element={<SeoSettingsPage />} />
+                        <Route path="/app/users" element={<UserManagementPage />} />
                       </Route>
                     </Route>
                   </>

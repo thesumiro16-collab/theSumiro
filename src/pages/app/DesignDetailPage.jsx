@@ -7,6 +7,7 @@ import FolderCountField from '../../components/designs/FolderCountField';
 import ShareFolderModal from '../../components/designs/ShareFolderModal';
 import Modal from '../../components/ui/Modal';
 import { formatDesignNo, formatRate, formatDate } from '../../utils/formatters';
+import { useAuth } from '../../contexts/AuthContext';
 
 // Client-side speed-bump password to prevent accidental/casual inventory edits.
 // Real protection is Supabase auth + RLS; this just gates the UI.
@@ -35,6 +36,8 @@ export default function DesignDetailPage() {
   const { id } = useParams();
   const { design, photos, loading, error, refetch, updateField, uploadAndAddPhotos, deletePhoto } = useDesignDetail(id);
   const { addToast } = useToast();
+  const { canWrite } = useAuth();
+  const isWritable = canWrite('dashboard');
   const [shareModalOpen, setShareModalOpen] = useState(false);
   const [isEditingRate, setIsEditingRate] = useState(false);
   const [rateValue, setRateValue] = useState('');
@@ -283,30 +286,32 @@ export default function DesignDetailPage() {
                     alignItems: 'center', 
                     gap: '10px', 
                     marginTop: '10px',
-                    cursor: 'pointer' 
+                    cursor: isWritable ? 'pointer' : 'default' 
                   }}
-                  onClick={handleStartEditRate}
-                  title="Click to edit rate"
+                  onClick={isWritable ? handleStartEditRate : undefined}
+                  title={isWritable ? "Click to edit rate" : undefined}
                 >
                   <span style={{ fontFamily: 'var(--font-sans)', fontSize: '20px', color: '#E8890C', fontWeight: 700 }}>
                     {formatRate(design.rate)}
                   </span>
-                  <button
-                    style={{
-                      background: 'none',
-                      border: 'none',
-                      color: '#A3A3A3',
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      padding: 0,
-                    }}
-                    aria-label="Edit rate"
-                  >
-                    <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-                    </svg>
-                  </button>
+                  {isWritable && (
+                    <button
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        color: '#A3A3A3',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        padding: 0,
+                      }}
+                      aria-label="Edit rate"
+                    >
+                      <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                      </svg>
+                    </button>
+                  )}
                 </div>
               )}
               <div className="accent-line" style={{ marginTop: '20px' }} />
@@ -367,15 +372,17 @@ export default function DesignDetailPage() {
                       <span style={{ fontFamily: 'var(--font-sans)', fontSize: '14px', fontWeight: 600, color: '#0A0A0A' }}>{value ?? 0}</span>
                     </div>
                   ))}
-                  <button
-                    type="button"
-                    onClick={() => { setPwError(''); setPwInput(''); setPwModalOpen(true); }}
-                    className="btn-outline"
-                    style={{ marginTop: '6px', padding: '9px 16px', fontSize: '11px', display: 'inline-flex', alignItems: 'center', gap: '8px', alignSelf: 'flex-start' }}
-                  >
-                    <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
-                    Unlock to Edit
-                  </button>
+                  {isWritable && (
+                    <button
+                      type="button"
+                      onClick={() => { setPwError(''); setPwInput(''); setPwModalOpen(true); }}
+                      className="btn-outline"
+                      style={{ marginTop: '6px', padding: '9px 16px', fontSize: '11px', display: 'inline-flex', alignItems: 'center', gap: '8px', alignSelf: 'flex-start' }}
+                    >
+                      <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
+                      Unlock to Edit
+                    </button>
+                  )}
                 </div>
               )}
             </div>
@@ -409,16 +416,18 @@ export default function DesignDetailPage() {
                 </svg>
                 Share Folder
               </button>
-              <button
-                onClick={() => setEditPhotosOpen(true)}
-                className="btn-outline"
-                style={{ padding: '11px 22px', gap: '8px', display: 'flex', alignItems: 'center', fontSize: '11px', borderColor: '#E8890C', color: '#E8890C' }}
-              >
-                <svg width="15" height="15" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002-2z" />
-                </svg>
-                Manage Photos
-              </button>
+              {isWritable && (
+                <button
+                  onClick={() => setEditPhotosOpen(true)}
+                  className="btn-outline"
+                  style={{ padding: '11px 22px', gap: '8px', display: 'flex', alignItems: 'center', fontSize: '11px', borderColor: '#E8890C', color: '#E8890C' }}
+                >
+                  <svg width="15" height="15" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002-2z" />
+                  </svg>
+                  Manage Photos
+                </button>
+              )}
             </div>
 
           </div>

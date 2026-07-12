@@ -22,9 +22,10 @@ const inputStyle = {
 };
 
 export default function StoryEditor() {
-  const { user } = useAuth();
+  const { user, canWrite } = useAuth();
   const { addToast } = useToast();
   const { refetch } = useSettings();
+  const isWritable = canWrite ? canWrite('about_editor') : true;
 
   const [form, setForm] = useState({
     about_founding_year: '',
@@ -155,6 +156,12 @@ export default function StoryEditor() {
 
   return (
     <form onSubmit={handleSave} className="flex flex-col gap-6">
+      {!isWritable && (
+        <p style={{ fontFamily: 'var(--font-sans)', fontSize: '12px', color: '#B45309', background: '#FEF9EE', padding: '10px 14px', borderRadius: '8px', border: '1px solid #FDE68A', margin: 0 }}>
+          You have read-only access. You cannot edit the "Our Story" settings.
+        </p>
+      )}
+
       {/* Founding year */}
       <div>
         <label htmlFor="about_founding_year" style={labelStyle}>Company Founding Year</label>
@@ -165,6 +172,7 @@ export default function StoryEditor() {
           inputMode="numeric"
           value={form.about_founding_year}
           onChange={handleChange}
+          disabled={!isWritable}
           placeholder="e.g. 2003"
           style={{ ...inputStyle, maxWidth: '180px' }}
           onFocus={focus}
@@ -184,6 +192,7 @@ export default function StoryEditor() {
           type="text"
           value={form.about_story_title}
           onChange={handleChange}
+          disabled={!isWritable}
           placeholder="e.g. Rooted in Surat's Textile Heritage"
           style={inputStyle}
           onFocus={focus}
@@ -200,6 +209,7 @@ export default function StoryEditor() {
           rows={4}
           value={form.about_story_p1}
           onChange={handleChange}
+          disabled={!isWritable}
           style={{ ...inputStyle, resize: 'vertical', lineHeight: 1.6 }}
           onFocus={focus}
           onBlur={blur}
@@ -215,6 +225,7 @@ export default function StoryEditor() {
           rows={4}
           value={form.about_story_p2}
           onChange={handleChange}
+          disabled={!isWritable}
           style={{ ...inputStyle, resize: 'vertical', lineHeight: 1.6 }}
           onFocus={focus}
           onBlur={blur}
@@ -222,14 +233,16 @@ export default function StoryEditor() {
       </div>
 
       {/* Actions */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', gap: '12px', marginTop: '8px', borderTop: '1px solid var(--color-border-soft)', paddingTop: '16px' }}>
-        <button type="button" onClick={handleReset} className="btn-outline" style={{ padding: '10px 20px', fontSize: '11px' }}>
-          Reset Defaults
-        </button>
-        <button type="submit" disabled={saving} className="btn-primary" style={{ padding: '10px 24px', fontSize: '11px' }}>
-          {saving ? 'Saving...' : 'Save Story'}
-        </button>
-      </div>
+      {isWritable && (
+        <div style={{ display: 'flex', justifyContent: 'space-between', gap: '12px', marginTop: '8px', borderTop: '1px solid var(--color-border-soft)', paddingTop: '16px' }}>
+          <button type="button" onClick={handleReset} className="btn-outline" style={{ padding: '10px 20px', fontSize: '11px' }}>
+            Reset Defaults
+          </button>
+          <button type="submit" disabled={saving} className="btn-primary" style={{ padding: '10px 24px', fontSize: '11px' }}>
+            {saving ? 'Saving...' : 'Save Story'}
+          </button>
+        </div>
+      )}
     </form>
   );
 }

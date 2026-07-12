@@ -4,13 +4,19 @@ import { useToast } from '../../contexts/ToastContext';
 import { supabase } from '../../lib/supabase';
 import { useSettings } from '../../hooks/useSettings';
 import Seo from '../../components/ui/Seo';
+import Spinner from '../../components/ui/Spinner';
 
 export default function ContactPage() {
-  const { settings } = useSettings();
+  const { settings, loading: settingsLoading } = useSettings();
   const { addToast } = useToast();
+
   const [form, setForm] = useState({ name: '', email: '', phone: '', message: '' });
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
+
+  if (settingsLoading) {
+    return <Spinner fullPage />;
+  }
 
   const handleChange = (e) => {
     const { name, value } = e.target;

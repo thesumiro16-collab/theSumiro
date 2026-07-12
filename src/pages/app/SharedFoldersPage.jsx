@@ -4,6 +4,7 @@ import Pagination from '../../components/ui/Pagination';
 import { formatDate, formatRate } from '../../utils/formatters';
 import { Link } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
+import { useAuth } from '../../contexts/AuthContext';
 
 const FILTERS = ['all', 'pending', 'returned'];
 
@@ -14,6 +15,8 @@ const statusStyle = {
 
 export default function SharedFoldersPage() {
   const { records, loading, error, page, totalPages, filter, searchTerm, returning, setPage, setFilter, setSearchTerm, markReturned } = useSharedFolders();
+  const { canWrite } = useAuth();
+  const isWritable = canWrite('shared_folders');
 
   // Date-range for the Excel export (filters by Sent Date)
   const [exportFrom, setExportFrom] = useState('');
@@ -388,7 +391,7 @@ export default function SharedFoldersPage() {
                           </td>
                           {/* Action */}
                           <td style={{ padding: '16px 16px', whiteSpace: 'nowrap' }}>
-                            {record.status === 'pending' && (
+                            {record.status === 'pending' && isWritable && (
                             <button
                               onClick={() => markReturned(record)}
                               disabled={returning[record.id]}

@@ -1,8 +1,13 @@
 import { useSettings } from '../../hooks/useSettings';
 import Seo from '../../components/ui/Seo';
+import Spinner from '../../components/ui/Spinner';
 
 export default function AboutPage() {
-  const { settings } = useSettings();
+  const { settings, loading } = useSettings();
+
+  if (loading) {
+    return <Spinner fullPage />;
+  }
   const values = [
     {
       icon: (
@@ -71,7 +76,7 @@ export default function AboutPage() {
             marginBottom: '20px',
           }}>
             Crafting Fabrics{' '}
-            <span style={{ fontStyle: 'italic', color: '#E8890C' }}>Since {settings.about_founding_year || '2003'}</span>
+            <span style={{ fontStyle: 'italic', color: '#E8890C' }}>Since {settings.about_founding_year || '2006'}</span>
           </h1>
           <div className="accent-line" style={{ margin: '0 auto' }} />
         </div>

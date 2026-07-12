@@ -9,7 +9,7 @@ const SIDEBAR_W = 288;
 const BREAKPOINT = 768;
 
 export default function AdminLayout() {
-  const { user, signOut } = useAuth();
+  const { user, profile, signOut } = useAuth();
   const { settings } = useSettings();
   const navigate = useNavigate();
   const location = useLocation();
@@ -56,79 +56,54 @@ export default function AdminLayout() {
   }, []);
 
   const handleLogout = useCallback(async () => {
-    if (window.confirm('Are you sure you want to sign out?')) {
-      await signOut();
-      navigate('/login');
-    }
+    await signOut();
+    navigate('/login');
   }, [signOut, navigate]);
 
-  const navItems = [
+  // Build full list of nav items with their permission key
+  const ALL_NAV_ITEMS = [
     {
-      to: '/app/dashboard',
-      label: 'Design Catalog',
-      icon: (
-        <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
-        </svg>
-      ),
+      to: '/app/dashboard', label: 'Design Catalog', permKey: 'dashboard',
+      icon: (<svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" /></svg>),
     },
     {
-      to: '/app/shared-folders',
-      label: 'Shared Folders',
-      icon: (
-        <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
-        </svg>
-      ),
+      to: '/app/shared-folders', label: 'Shared Folders', permKey: 'shared_folders',
+      icon: (<svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" /></svg>),
     },
     {
-      to: '/app/inbox',
-      label: 'Inquiries Inbox',
-      badge: messageCount,
-      icon: (
-        <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" d="M3 19v-8.93a2 2 0 01.89-1.664l8-5.333a2 2 0 012.22 0l8 5.333A2 2 0 0121 10.07V19a2 2 0 01-2 2H5a2 2 0 01-2-2z" />
-          <path strokeLinecap="round" strokeLinejoin="round" d="M3 10l9 6 9-6" />
-        </svg>
-      ),
+      to: '/app/inbox', label: 'Inquiries Inbox', permKey: 'inbox', badge: messageCount,
+      icon: (<svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M3 19v-8.93a2 2 0 01.89-1.664l8-5.333a2 2 0 012.22 0l8 5.333A2 2 0 0121 10.07V19a2 2 0 01-2 2H5a2 2 0 01-2-2z" /><path strokeLinecap="round" strokeLinejoin="round" d="M3 10l9 6 9-6" /></svg>),
     },
     {
-      to: '/app/ticker',
-      label: 'Edit Ticker',
-      icon: (
-        <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-        </svg>
-      ),
+      to: '/app/ticker', label: 'Edit Ticker', permKey: 'ticker',
+      icon: (<svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg>),
     },
     {
-      to: '/app/settings',
-      label: 'Enquiry Settings',
-      icon: (
-        <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
-        </svg>
-      ),
+      to: '/app/settings', label: 'Enquiry Settings', permKey: 'settings',
+      icon: (<svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" /></svg>),
     },
     {
-      to: '/app/about-editor',
-      label: 'Story Editor',
-      icon: (
-        <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-        </svg>
-      ),
+      to: '/app/about-editor', label: 'Story Editor', permKey: 'about_editor',
+      icon: (<svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>),
     },
     {
-      to: '/app/seo',
-      label: 'SEO Settings',
-      icon: (
-        <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35M17 11a6 6 0 11-12 0 6 6 0 0112 0z" />
-        </svg>
-      ),
+      to: '/app/seo', label: 'SEO Settings', permKey: 'seo',
+      icon: (<svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35M17 11a6 6 0 11-12 0 6 6 0 0112 0z" /></svg>),
+    },
+    {
+      to: '/app/users', label: 'User Management', permKey: 'users',
+      icon: (<svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a3 3 0 11-6 0 3 3 0 016 0z" /></svg>),
     },
   ];
+
+  // Admins see all items; others see items they have read or write permission for
+  const userPerms = profile?.role === 'admin'
+    ? Object.fromEntries(ALL_NAV_ITEMS.map(i => [i.permKey, 'write']))
+    : (profile?.permissions || {});
+
+  const navItems = ALL_NAV_ITEMS.filter(item =>
+    profile?.role === 'admin' || userPerms[item.permKey] === true || userPerms[item.permKey] === 'read' || userPerms[item.permKey] === 'write'
+  );
 
   /* ── Computed layout values ───────────────────────────── */
   // On desktop: push content right when sidebar is open
@@ -237,8 +212,7 @@ export default function AdminLayout() {
         transform: isOpen ? 'translateX(0)' : `translateX(-${SIDEBAR_W}px)`,
         transition: 'transform 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
         boxShadow: isOpen ? '4px 0 24px rgba(0,0,0,0.06)' : 'none',
-        overflowY: 'auto',
-        overflowX: 'hidden',
+        overflow: 'hidden',
       }}>
 
         {/* Branding */}
@@ -287,7 +261,7 @@ export default function AdminLayout() {
         </div>
 
         {/* Nav Items */}
-        <nav style={{ flex: '1 1 0', minHeight: 0, overflowY: 'auto', padding: '6px 14px 20px', display: 'flex', flexDirection: 'column', gap: '3px' }}>
+        <nav className="sidebar-nav-scroll" style={{ flex: '1 1 0', minHeight: 0, overflowY: 'auto', overflowX: 'hidden', padding: '6px 14px 20px', display: 'flex', flexDirection: 'column', gap: '3px' }}>
           {navItems.map((item) => (
             <NavLink
               key={item.to}
