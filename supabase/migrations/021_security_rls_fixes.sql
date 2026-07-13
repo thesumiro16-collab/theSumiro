@@ -12,13 +12,14 @@
 -- =============================================================================
 
 -- ── 1. design_photos DELETE ──────────────────────────────────────────────────
-DROP POLICY IF EXISTS "auth_delete_photos"  ON design_photos;
-DROP POLICY IF EXISTS "admin_delete_photos" ON design_photos;
+DROP POLICY IF EXISTS "auth_delete_photos"              ON design_photos;
+DROP POLICY IF EXISTS "admin_delete_photos"             ON design_photos;
+DROP POLICY IF EXISTS "auth_delete_own_or_admin_photos" ON design_photos;
 
 CREATE POLICY "auth_delete_own_or_admin_photos"
   ON design_photos FOR DELETE
   TO authenticated
-  USING (created_by = auth.uid() OR is_admin());
+  USING (is_admin() OR created_by = auth.uid());
 
 -- ── 2. contact_messages DELETE ───────────────────────────────────────────────
 DROP POLICY IF EXISTS "auth_delete_contact_messages" ON contact_messages;

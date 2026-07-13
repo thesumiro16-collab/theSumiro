@@ -190,11 +190,12 @@ export default function UserManagementPage() {
     if (r.is_system) { addToast({ type: 'error', message: 'Cannot delete built-in roles.' }); return; }
     if (!confirm(`Delete role "${r.display_name}"? Users with this role will keep it until reassigned.`)) return;
     try {
-      const { error } = await supabase.from('roles').delete().eq('id', r.id);
+      const { error } = await supabase.rpc('admin_delete_role', { p_role_id: r.id });
       if (error) throw error;
       addToast({ type: 'success', message: `Role '${r.display_name}' deleted.` });
       fetchRoles();
     } catch (err) {
+      console.error('Delete role failed:', err);
       addToast({ type: 'error', message: err.message || 'Failed to delete role.' });
     }
   };

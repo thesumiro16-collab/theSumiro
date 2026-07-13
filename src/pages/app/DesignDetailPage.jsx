@@ -47,6 +47,7 @@ export default function DesignDetailPage() {
   const [isDeleting, setIsDeleting] = useState({});
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(null);
+  const [confirmDeletePhoto, setConfirmDeletePhoto] = useState(null); // photo id pending confirm
 
   // Inventory edit lock
   const [inventoryUnlocked, setInventoryUnlocked] = useState(false);
@@ -70,10 +71,10 @@ export default function DesignDetailPage() {
   const handleDeletePhoto = async (photo) => {
     if (photos.length <= 1) {
       addToast({ type: 'error', message: 'A design must have at least one photo.' });
+      setConfirmDeletePhoto(null);
       return;
     }
-    if (!window.confirm('Are you sure you want to delete this photo? This will also remove it from Cloudinary storage.')) return;
-    
+    setConfirmDeletePhoto(null);
     setIsDeleting(prev => ({ ...prev, [photo.id]: true }));
     try {
       await deletePhoto(photo);
@@ -491,38 +492,53 @@ export default function DesignDetailPage() {
             </p>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(96px, 1fr))', gap: '12px' }}>
               {photos.map((p) => (
-                <div key={p.id} style={{ position: 'relative', borderRadius: '10px', overflow: 'hidden', border: '1px solid var(--color-border)', aspectRatio: '1', background: '#F7F5F1' }}>
+                <div key={p.id} style={{ position: 'relative', borderRadius: '10px', overflow: 'hidden', border: `1px solid ${confirmDeletePhoto === p.id ? '#DC2626' : 'var(--color-border)'}`, aspectRatio: '1', background: '#F7F5F1', transition: 'border-color 0.2s' }}>
                   <img src={p.secure_url} alt="Design thumbnail" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                  <button
-                    onClick={() => handleDeletePhoto(p)}
-                    disabled={isDeleting[p.id] || isUploading}
-                    style={{
-                      position: 'absolute',
-                      top: '4px',
-                      right: '4px',
-                      width: '24px',
-                      height: '24px',
-                      borderRadius: '50%',
-                      background: 'rgba(220, 38, 38, 0.9)',
-                      color: '#FFFFFF',
-                      border: 'none',
-                      cursor: (isDeleting[p.id] || isUploading) ? 'not-allowed' : 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      boxShadow: '0 2px 6px rgba(0,0,0,0.15)',
-                      transition: 'background 0.2s',
-                    }}
-                    title="Delete Photo"
-                  >
-                    {isDeleting[p.id] ? (
-                      <div style={{ width: '10px', height: '10px', border: '1.5px solid #FFFFFF', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.6s linear infinite' }} />
-                    ) : (
-                      <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                      </svg>
-                    )}
-                  </button>
+
+                  {/* Inline confirm overlay */}
+                  {confirmDeletePhoto === p.id && (
+                    <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.65)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '6px', padding: '6px' }}>
+                      <p style={{ color: '#FFF', fontFamily: 'var(--font-sans)', fontSize: '9px', fontWeight: 700, textAlign: 'center', lineHeight: 1.3 }}>Delete?</p>
+                      <button
+                        onClick={() => handleDeletePhoto(p)}
+                        disabled={isDeleting[p.id]}
+                        style={{ background: '#DC2626', color: '#FFF', border: 'none', borderRadius: '5px', padding: '4px 10px', fontSize: '9px', fontWeight: 700, cursor: 'pointer', width: '100%' }}
+                      >
+                        {isDeleting[p.id] ? '...' : 'Yes, Delete'}
+                      </button>
+                      <button
+                        onClick={() => setConfirmDeletePhoto(null)}
+                        style={{ background: 'rgba(255,255,255,0.15)', color: '#FFF', border: '1px solid rgba(255,255,255,0.3)', borderRadius: '5px', padding: '4px 10px', fontSize: '9px', fontWeight: 600, cursor: 'pointer', width: '100%' }}
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Initial delete trigger button */}
+                  {confirmDeletePhoto !== p.id && (
+                    <button
+                      onClick={() => setConfirmDeletePhoto(p.id)}
+                      disabled={isDeleting[p.id] || isUploading}
+                      style={{
+                        position: 'absolute', top: '4px', right: '4px',
+                        width: '24px', height: '24px', borderRadius: '50%',
+                        background: 'rgba(220, 38, 38, 0.9)', color: '#FFFFFF',
+                        border: 'none', cursor: (isDeleting[p.id] || isUploading) ? 'not-allowed' : 'pointer',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        boxShadow: '0 2px 6px rgba(0,0,0,0.15)', transition: 'background 0.2s',
+                      }}
+                      title="Delete Photo"
+                    >
+                      {isDeleting[p.id] ? (
+                        <div style={{ width: '10px', height: '10px', border: '1.5px solid #FFFFFF', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.6s linear infinite' }} />
+                      ) : (
+                        <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                      )}
+                    </button>
+                  )}
                 </div>
               ))}
             </div>

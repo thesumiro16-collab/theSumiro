@@ -112,11 +112,9 @@ export function useDesignDetail(id) {
           }
         }
 
-        // Step 2: Delete row from Supabase database
+        // Step 2: Delete row from Supabase database via RPC (bypasses RLS)
         const { error: deleteError } = await supabase
-          .from('design_photos')
-          .delete()
-          .eq('id', photo.id);
+          .rpc('admin_delete_photo', { p_photo_id: photo.id });
           
         if (deleteError) throw deleteError;
         
