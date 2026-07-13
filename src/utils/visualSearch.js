@@ -164,8 +164,8 @@ export async function performVisualSearch(uploadedFile, designsList, allPhotosLi
       }
     }
 
-    // Only include designs that are a 100% match
-    if (urls.length > 0 && Math.round(bestScore * 100) === 100) {
+    // Include all designs that have photos, sorted by similarity
+    if (urls.length > 0) {
       results.push({
         ...design,
         // Include first photo for rendering compatibility

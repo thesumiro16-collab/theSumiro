@@ -24,6 +24,7 @@ export default function DashboardPage() {
   const [visualSearchLoading, setVisualSearchLoading] = useState(false);
   const [visualSearchProgress, setVisualSearchProgress] = useState(0);
   const [dragOverPhoto, setDragOverPhoto] = useState(false);
+  const [visualSearchMinScore, setVisualSearchMinScore] = useState(0); // minimum match % filter
 
   const handlePhotoSelect = (e) => {
     const file = e.target.files?.[0];
@@ -306,40 +307,80 @@ export default function DashboardPage() {
         {/* ── Design Grid / Visual Search Results ──────────────────────────────── */}
         {!loading && !error && (
           <>
-            {/* Visual Search Clear Banner */}
-            {visualSearchResults && (
-              <div style={{
-                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                background: '#FFF8EE', border: '1.5px solid #F5C97A', borderRadius: '12px',
-                padding: '12px 20px', marginBottom: '24px', flexWrap: 'wrap', gap: '10px'
-              }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                  <span style={{ fontSize: '16px' }}>📷</span>
-                  <span style={{ fontFamily: 'var(--font-sans)', fontSize: '13px', color: '#B45309', fontWeight: 600 }}>
-                    Visual Search active: sorted by similarity to your uploaded image.
-                  </span>
+            {/* Visual Search Clear Banner + Filter */}
+            {visualSearchResults && (() => {
+              const SCORE_OPTIONS = [
+                { label: 'All', value: 0 },
+                { label: '≥ 25%', value: 25 },
+                { label: '≥ 50%', value: 50 },
+                { label: '≥ 75%', value: 75 },
+                { label: '≥ 90%', value: 90 },
+              ];
+              return (
+                <div style={{
+                  background: '#FFF8EE', border: '1.5px solid #F5C97A', borderRadius: '12px',
+                  padding: '14px 20px', marginBottom: '24px', display: 'flex',
+                  flexDirection: 'column', gap: '12px'
+                }}>
+                  {/* Top row: label + clear */}
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <span style={{ fontSize: '16px' }}>📷</span>
+                      <span style={{ fontFamily: 'var(--font-sans)', fontSize: '13px', color: '#B45309', fontWeight: 600 }}>
+                        Visual Search active — sorted by similarity
+                      </span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => { setVisualSearchResults(null); setSearchFile(null); setSearchPreview(''); setVisualSearchMinScore(0); }}
+                      style={{
+                        background: 'transparent', border: 'none', color: '#B45309',
+                        fontFamily: 'var(--font-sans)', fontSize: '11px', fontWeight: 700,
+                        textTransform: 'uppercase', cursor: 'pointer', letterSpacing: '0.05em',
+                        textDecoration: 'underline', padding: 0
+                      }}
+                    >
+                      Clear
+                    </button>
+                  </div>
+                  {/* Filter pills */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                    <span style={{ fontFamily: 'var(--font-sans)', fontSize: '10px', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#92400E', marginRight: '2px' }}>Min Match:</span>
+                    {SCORE_OPTIONS.map(opt => (
+                      <button
+                        key={opt.value}
+                        type="button"
+                        onClick={() => setVisualSearchMinScore(opt.value)}
+                        style={{
+                          fontFamily: 'var(--font-sans)', fontSize: '11px', fontWeight: 700,
+                          padding: '4px 12px', borderRadius: '20px', cursor: 'pointer',
+                          border: '1.5px solid',
+                          borderColor: visualSearchMinScore === opt.value ? '#E8890C' : '#F5C97A',
+                          background: visualSearchMinScore === opt.value ? '#E8890C' : 'transparent',
+                          color: visualSearchMinScore === opt.value ? '#FFFFFF' : '#B45309',
+                          transition: 'all 0.15s',
+                        }}
+                      >
+                        {opt.label}
+                      </button>
+                    ))}
+                  </div>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => { setVisualSearchResults(null); setSearchFile(null); setSearchPreview(''); }}
-                  style={{
-                    background: 'transparent', border: 'none', color: '#B45309',
-                    fontFamily: 'var(--font-sans)', fontSize: '11px', fontWeight: 700,
-                    textTransform: 'uppercase', cursor: 'pointer', letterSpacing: '0.05em',
-                    textDecoration: 'underline', padding: 0
-                  }}
-                >
-                  Clear Visual Search
-                </button>
-              </div>
-            )}
+              );
+            })()}
 
             {/* Render results grid */}
-            {((visualSearchResults && visualSearchResults.length > 0) || (designs.length > 0)) && (
+            {(() => {
+              const filteredVisual = visualSearchResults
+                ? visualSearchResults.filter(d => d.similarityScore >= visualSearchMinScore)
+                : null;
+              const displayList = filteredVisual || designs;
+              if (displayList.length === 0 && !visualSearchResults) return null;
+              return (
               <>
                 <p style={{ fontFamily: 'var(--font-sans)', fontSize: '11px', color: '#A3A3A3', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '20px' }}>
-                  {visualSearchResults 
-                    ? `${visualSearchResults.length} design${visualSearchResults.length !== 1 ? 's' : ''} matched`
+                  {filteredVisual
+                    ? `${filteredVisual.length} design${filteredVisual.length !== 1 ? 's' : ''} matched${visualSearchMinScore > 0 ? ` (≥${visualSearchMinScore}%)` : ''}`
                     : `${designs.length} design${designs.length !== 1 ? 's' : ''} ${searchTerm ? `matching "${searchTerm}"` : 'in archive'}`
                   }
                 </p>
@@ -349,12 +390,13 @@ export default function DashboardPage() {
                   gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))',
                   gap: '20px',
                 }}>
-                  {(visualSearchResults || designs).map((design) => (
+                  {displayList.map((design) => (
                     <div key={design.id} style={{ position: 'relative' }}>
                       {design.similarityScore !== undefined && (
                         <div style={{
                           position: 'absolute', top: '12px', right: '12px', zIndex: 10,
-                          background: 'rgba(232,137,12,0.95)', color: '#FFFFFF',
+                          background: design.similarityScore >= 75 ? 'rgba(22,163,74,0.93)' : design.similarityScore >= 50 ? 'rgba(232,137,12,0.95)' : 'rgba(100,100,120,0.85)',
+                          color: '#FFFFFF',
                           fontFamily: 'var(--font-sans)', fontSize: '9px', fontWeight: 700,
                           padding: '4px 10px', borderRadius: '20px',
                           boxShadow: '0 2px 6px rgba(0,0,0,0.15)',
@@ -372,8 +414,18 @@ export default function DashboardPage() {
                 {!visualSearchResults && (
                   <Pagination currentPage={page} totalPages={totalPages} onPageChange={setPage} />
                 )}
+
+                {/* Empty filtered results */}
+                {filteredVisual && filteredVisual.length === 0 && (
+                  <div style={{ textAlign: 'center', padding: '48px 24px', gridColumn: '1/-1' }}>
+                    <p style={{ fontFamily: 'var(--font-sans)', fontSize: '14px', color: '#737373' }}>
+                      No designs match ≥{visualSearchMinScore}%. Try a lower threshold.
+                    </p>
+                  </div>
+                )}
               </>
-            )}
+              );
+            })()}
 
             {/* Handle empty case for visual search specifically */}
             {visualSearchResults && visualSearchResults.length === 0 && (
