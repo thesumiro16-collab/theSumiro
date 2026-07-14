@@ -30,7 +30,7 @@ export function useDesigns() {
         .from('designs')
         .select('*')
         .not('design_no', 'like', 'SYSTEM_%')
-        .order('created_at', { ascending: false })
+        .order('design_no', { ascending: false })
         .range(from, to);
 
       // Apply search filter if present

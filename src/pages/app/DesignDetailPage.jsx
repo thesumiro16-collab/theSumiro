@@ -9,10 +9,7 @@ import Modal from '../../components/ui/Modal';
 import { formatDesignNo, formatRate, formatDate } from '../../utils/formatters';
 import { useAuth } from '../../contexts/AuthContext';
 
-// Client-side speed-bump password to prevent accidental/casual inventory edits.
-// Real protection is Supabase auth + RLS; this just gates the UI.
-// Configurable via VITE_INVENTORY_PASSWORD in your .env file.
-const INVENTORY_PASSWORD = import.meta.env.VITE_INVENTORY_PASSWORD || 'sumiro@inventory';
+
 
 const MetaRow = ({ label, value }) => (
   <div style={{
@@ -41,7 +38,7 @@ export default function DesignDetailPage() {
   const [shareModalOpen, setShareModalOpen] = useState(false);
   const [isEditingRate, setIsEditingRate] = useState(false);
   const [rateValue, setRateValue] = useState('');
-  
+
   // Photo management state
   const [editPhotosOpen, setEditPhotosOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState({});
@@ -49,24 +46,7 @@ export default function DesignDetailPage() {
   const [uploadProgress, setUploadProgress] = useState(null);
   const [confirmDeletePhoto, setConfirmDeletePhoto] = useState(null); // photo id pending confirm
 
-  // Inventory edit lock
-  const [inventoryUnlocked, setInventoryUnlocked] = useState(false);
-  const [pwModalOpen, setPwModalOpen] = useState(false);
-  const [pwInput, setPwInput] = useState('');
-  const [pwError, setPwError] = useState('');
 
-  const handleUnlockInventory = (e) => {
-    e.preventDefault();
-    if (pwInput === INVENTORY_PASSWORD) {
-      setInventoryUnlocked(true);
-      setPwModalOpen(false);
-      setPwInput('');
-      setPwError('');
-      addToast({ type: 'success', message: 'Inventory editing unlocked' });
-    } else {
-      setPwError('Incorrect password. Please try again.');
-    }
-  };
 
   const handleDeletePhoto = async (photo) => {
     if (photos.length <= 1) {
@@ -88,7 +68,7 @@ export default function DesignDetailPage() {
   const handleUploadPhotos = async (e) => {
     const selectedFiles = Array.from(e.target.files || []);
     if (selectedFiles.length === 0) return;
-    
+
     setIsUploading(true);
     setUploadProgress({ current: 0, total: selectedFiles.length });
     try {
@@ -281,13 +261,13 @@ export default function DesignDetailPage() {
                   </button>
                 </div>
               ) : (
-                <div 
-                  style={{ 
-                    display: 'inline-flex', 
-                    alignItems: 'center', 
-                    gap: '10px', 
+                <div
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '10px',
                     marginTop: '10px',
-                    cursor: isWritable ? 'pointer' : 'default' 
+                    cursor: isWritable ? 'pointer' : 'default'
                   }}
                   onClick={isWritable ? handleStartEditRate : undefined}
                   title={isWritable ? "Click to edit rate" : undefined}
@@ -343,19 +323,8 @@ export default function DesignDetailPage() {
                 <h2 style={{ fontFamily: 'var(--font-sans)', fontSize: '11px', fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', color: '#0A0A0A' }}>
                   Folder Inventory
                 </h2>
-                {inventoryUnlocked ? (
-                  <span style={{ marginLeft: 'auto', display: 'inline-flex', alignItems: 'center', gap: '5px', fontFamily: 'var(--font-sans)', fontSize: '9px', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#15803D', background: 'rgba(34,197,94,0.10)', border: '1px solid rgba(34,197,94,0.25)', borderRadius: '99px', padding: '3px 9px' }}>
-                    <svg width="11" height="11" fill="none" stroke="currentColor" strokeWidth="2.2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M8 11V7a4 4 0 118 0m-9 4h10a2 2 0 012 2v5a2 2 0 01-2 2H7a2 2 0 01-2-2v-5a2 2 0 012-2z" /></svg>
-                    Unlocked
-                  </span>
-                ) : (
-                  <span style={{ marginLeft: 'auto', display: 'inline-flex', alignItems: 'center', gap: '5px', fontFamily: 'var(--font-sans)', fontSize: '9px', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#A3A3A3', background: 'var(--color-bg-soft)', border: '1px solid var(--color-border)', borderRadius: '99px', padding: '3px 9px' }}>
-                    <svg width="11" height="11" fill="none" stroke="currentColor" strokeWidth="2.2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
-                    Locked
-                  </span>
-                )}
               </div>
-              {inventoryUnlocked ? (
+              {isWritable ? (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                   <FolderCountField label="Office Folder" value={design.office_folder} onSave={(v) => updateField('office_folder', v)} />
                   <FolderCountField label="Bag Folder" value={design.bag_folder} onSave={(v) => updateField('bag_folder', v)} />
@@ -373,17 +342,6 @@ export default function DesignDetailPage() {
                       <span style={{ fontFamily: 'var(--font-sans)', fontSize: '14px', fontWeight: 600, color: '#0A0A0A' }}>{value ?? 0}</span>
                     </div>
                   ))}
-                  {isWritable && (
-                    <button
-                      type="button"
-                      onClick={() => { setPwError(''); setPwInput(''); setPwModalOpen(true); }}
-                      className="btn-outline"
-                      style={{ marginTop: '6px', padding: '9px 16px', fontSize: '11px', display: 'inline-flex', alignItems: 'center', gap: '8px', alignSelf: 'flex-start' }}
-                    >
-                      <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
-                      Unlock to Edit
-                    </button>
-                  )}
                 </div>
               )}
             </div>
@@ -440,48 +398,7 @@ export default function DesignDetailPage() {
         <ShareFolderModal design={design} onClose={() => setShareModalOpen(false)} onSuccess={handleShareSuccess} />
       </Modal>
 
-      {/* Inventory Unlock Modal */}
-      <Modal isOpen={pwModalOpen} onClose={() => setPwModalOpen(false)} title="Unlock Inventory Editing">
-        <form onSubmit={handleUnlockInventory} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-          <p style={{ fontFamily: 'var(--font-sans)', fontSize: '13px', color: '#737373', lineHeight: 1.6 }}>
-            Enter the inventory password to enable editing of folder counts for this design.
-          </p>
-          <div>
-            <label htmlFor="inventory-password" style={{ display: 'block', fontFamily: 'var(--font-sans)', fontSize: '10px', fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', color: '#3D3D3D', marginBottom: '7px' }}>
-              Password
-            </label>
-            <input
-              id="inventory-password"
-              type="password"
-              autoFocus
-              value={pwInput}
-              onChange={(e) => { setPwInput(e.target.value); setPwError(''); }}
-              placeholder="Enter password"
-              style={{
-                width: '100%', boxSizing: 'border-box',
-                background: pwError ? '#FFF5F5' : 'var(--color-bg-soft)',
-                border: `1.5px solid ${pwError ? '#FECACA' : 'var(--color-border)'}`,
-                borderRadius: '8px', padding: '11px 14px',
-                fontFamily: 'var(--font-sans)', fontSize: '14px',
-                color: 'var(--color-text-primary)', outline: 'none',
-              }}
-            />
-            {pwError && (
-              <p style={{ fontFamily: 'var(--font-sans)', fontSize: '11px', color: '#DC2626', marginTop: '5px' }}>
-                {pwError}
-              </p>
-            )}
-          </div>
-          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
-            <button type="button" onClick={() => setPwModalOpen(false)} className="btn-outline" style={{ padding: '10px 20px', fontSize: '11px' }}>
-              Cancel
-            </button>
-            <button type="submit" className="btn-primary" style={{ padding: '10px 24px', fontSize: '11px' }}>
-              Unlock
-            </button>
-          </div>
-        </form>
-      </Modal>
+
 
       {/* Manage Photos Modal */}
       <Modal isOpen={editPhotosOpen} onClose={() => setEditPhotosOpen(false)} title="Manage Design Photos">
