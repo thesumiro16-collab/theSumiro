@@ -341,6 +341,10 @@ export default function EnquiryEditor({ onSuccess }) {
         home_video_thumbnail: finalThumbnailUrl,
         collection_slides: finalCollectionImages,
         maintenance_mode: !!form.maintenance_mode,
+        countdown_mode: !!form.countdown_mode,
+        countdown_title: (form.countdown_title || '').trim(),
+        countdown_description: (form.countdown_description || '').trim(),
+        countdown_target_date: form.countdown_target_date || '',
       };
 
       if (data?.id) {
@@ -790,6 +794,127 @@ export default function EnquiryEditor({ onSuccess }) {
               transition: 'left 0.25s',
             }} />
           </button>
+        </div>
+      </div>
+
+      <hr style={{ borderTop: '1px solid var(--color-border-soft)', margin: '8px 0' }} />
+
+      {/* ── Section: Coming Soon Countdown Mode ─────────── */}
+      <div className="flex flex-col gap-3">
+        <h4 style={{ fontFamily: 'var(--font-sans)', fontSize: '11px', fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--color-text-primary)' }}>
+          Coming Soon / Launch Countdown
+        </h4>
+        <div style={{
+          display: 'flex', flexDirection: 'column', gap: '16px', padding: '16px',
+          border: `1.5px solid ${form.countdown_mode ? '#E8890C' : 'var(--color-border)'}`,
+          borderRadius: '10px',
+          background: form.countdown_mode ? '#FFF8EE' : 'var(--color-bg-soft)',
+          transition: 'all 0.2s',
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '16px' }}>
+            <div style={{ minWidth: 0 }}>
+              <p style={{ fontFamily: 'var(--font-sans)', fontSize: '13px', fontWeight: 600, color: 'var(--color-text-primary)' }}>
+                Countdown Launch Page {form.countdown_mode ? '· ON' : '· OFF'}
+              </p>
+              <p style={{ fontFamily: 'var(--font-sans)', fontSize: '11px', color: '#A3A3A3', marginTop: '3px', lineHeight: 1.5 }}>
+                When enabled, public visitors are redirected to a landing page with a live launch countdown.
+              </p>
+            </div>
+
+            {/* Toggle switch */}
+            <button
+              type="button"
+              role="switch"
+              aria-checked={!!form.countdown_mode}
+              onClick={isWritable ? () => setForm(prev => ({ ...prev, countdown_mode: !prev.countdown_mode })) : undefined}
+              disabled={!isWritable}
+              style={{
+                flexShrink: 0,
+                width: '48px', height: '28px',
+                borderRadius: '99px',
+                border: 'none',
+                cursor: isWritable ? 'pointer' : 'not-allowed',
+                background: form.countdown_mode ? '#E8890C' : '#D4C9B5',
+                position: 'relative',
+                transition: 'background 0.25s',
+                opacity: isWritable ? 1 : 0.6,
+              }}
+              aria-label="Toggle countdown mode"
+            >
+              <span style={{
+                position: 'absolute', top: '3px',
+                left: form.countdown_mode ? '23px' : '3px',
+                width: '22px', height: '22px',
+                borderRadius: '50%', background: '#FFFFFF',
+                boxShadow: '0 1px 4px rgba(0,0,0,0.25)',
+                transition: 'left 0.25s',
+              }} />
+            </button>
+          </div>
+
+          {form.countdown_mode && (
+            <div style={{
+              display: 'flex', flexDirection: 'column', gap: '14px', marginTop: '8px',
+              borderTop: '1px solid rgba(232,137,12,0.15)', paddingTop: '16px'
+            }}>
+              {/* Target Date/Time */}
+              <div className="space-y-2">
+                <label className="form-label" htmlFor="countdown-target-date">
+                  Launch Date & Time
+                </label>
+                <input
+                  id="countdown-target-date"
+                  name="countdown_target_date"
+                  type="datetime-local"
+                  value={form.countdown_target_date || ''}
+                  onChange={handleChange}
+                  disabled={!isWritable}
+                  className="form-input"
+                  required={form.countdown_mode}
+                  style={{ background: '#FFFFFF' }}
+                />
+                <p style={{ fontFamily: 'var(--font-sans)', fontSize: '11px', color: '#A3A3A3', marginTop: '4px' }}>
+                  Choose when the countdown ends and the site automatically goes live.
+                </p>
+              </div>
+
+              {/* Countdown Title */}
+              <div className="space-y-2">
+                <label className="form-label" htmlFor="countdown-title">
+                  Launch Title Text
+                </label>
+                <input
+                  id="countdown-title"
+                  name="countdown_title"
+                  type="text"
+                  placeholder="e.g. Next Design Drop is Coming"
+                  value={form.countdown_title}
+                  onChange={handleChange}
+                  disabled={!isWritable}
+                  className="form-input"
+                  style={{ background: '#FFFFFF' }}
+                />
+              </div>
+
+              {/* Countdown Description */}
+              <div className="space-y-2">
+                <label className="form-label" htmlFor="countdown-desc">
+                  Teaser Description
+                </label>
+                <textarea
+                  id="countdown-desc"
+                  name="countdown_description"
+                  rows="3"
+                  placeholder="Tell clients what is coming soon..."
+                  value={form.countdown_description}
+                  onChange={handleChange}
+                  disabled={!isWritable}
+                  className="form-input"
+                  style={{ background: '#FFFFFF', resize: 'vertical' }}
+                />
+              </div>
+            </div>
+          )}
         </div>
       </div>
 

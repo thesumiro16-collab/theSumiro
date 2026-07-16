@@ -9,6 +9,11 @@ export const DEFAULT_SETTINGS = {
   home_video_thumbnail: '',
   collection_slides: [],
   maintenance_mode: false,
+  // Countdown settings
+  countdown_mode: false,
+  countdown_title: 'Exquisite New Collection Drop',
+  countdown_description: 'We are preparing a brand new collection of premium woven silks and jacquards. Stay tuned for the drop!',
+  countdown_target_date: '',
   // About / Our Story
   about_founding_year: '2006',
   about_story_title: "Rooted in Surat's Textile Heritage",

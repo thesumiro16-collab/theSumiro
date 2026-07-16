@@ -20,6 +20,7 @@ const LoginPage = lazy(() => import('./pages/auth/LoginPage'));
 const DashboardPage = lazy(() => import('./pages/app/DashboardPage'));
 const DesignDetailPage = lazy(() => import('./pages/app/DesignDetailPage'));
 const SharedFoldersPage = lazy(() => import('./pages/app/SharedFoldersPage'));
+const ComingSoonPage = lazy(() => import('./pages/portfolio/ComingSoonPage'));
 
 // New Admin Panel Pages & Layout
 const AdminLayout = lazy(() => import('./components/layout/AdminLayout'));
@@ -67,6 +68,16 @@ function PublicLayout() {
   // Logged-in users (admins) bypass it so they can still preview the live site.
   if (settings.maintenance_mode && !user) {
     return <Navigate to="/maintenance" replace />;
+  }
+
+  // When countdown mode is enabled, redirect public visitors to the coming soon page (if target time is in the future).
+  // Logged-in users (admins) bypass it so they can still preview and manage the archive.
+  const hasCountdownLapsed = settings.countdown_target_date
+    ? (new Date(settings.countdown_target_date).getTime() <= Date.now())
+    : true;
+
+  if (settings.countdown_mode && !hasCountdownLapsed && !user) {
+    return <Navigate to="/coming-soon" replace />;
   }
 
   return (
@@ -141,6 +152,7 @@ export default function App() {
               <Routes>
                 {/* Standalone maintenance page (no navbar/footer) */}
                 <Route path="/maintenance" element={<MaintenancePage />} />
+                <Route path="/coming-soon" element={<ComingSoonPage />} />
 
                 {/* Public Portfolio with Header and Footer */}
                 <Route element={<PublicLayout />}>
