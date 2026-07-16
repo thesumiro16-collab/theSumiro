@@ -24,6 +24,71 @@ async function getUploadSignature() {
 }
 
 /**
+ * Compresses an image file on the client-side using Canvas.
+ * Limits max dimensions to 1600px and reduces JPEG quality to 80%.
+ *
+ * @param {File} file
+ * @returns {Promise<File>}
+ */
+function compressImage(file) {
+  return new Promise((resolve) => {
+    if (!file.type.startsWith('image/')) {
+      return resolve(file); // Non-images are uploaded as-is
+    }
+
+    const img = new Image();
+    img.src = URL.createObjectURL(file);
+
+    img.onload = () => {
+      URL.revokeObjectURL(img.src);
+      const MAX_WIDTH = 1600;
+      const MAX_HEIGHT = 1600;
+      let width = img.naturalWidth;
+      let height = img.naturalHeight;
+
+      if (width <= MAX_WIDTH && height <= MAX_HEIGHT && file.size < 400 * 1024) {
+        return resolve(file); // Already small, skip canvas processing
+      }
+
+      if (width > height) {
+        if (width > MAX_WIDTH) {
+          height = Math.round((height * MAX_WIDTH) / width);
+          width = MAX_WIDTH;
+        }
+      } else {
+        if (height > MAX_HEIGHT) {
+          width = Math.round((width * MAX_HEIGHT) / height);
+          height = MAX_HEIGHT;
+        }
+      }
+
+      const canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, width, height);
+
+      canvas.toBlob(
+        (blob) => {
+          if (!blob) return resolve(file);
+          const compressedFile = new File([blob], file.name, {
+            type: 'image/jpeg',
+            lastModified: Date.now(),
+          });
+          resolve(compressedFile);
+        },
+        'image/jpeg',
+        0.8 // 80% JPEG quality
+      );
+    };
+
+    img.onerror = () => {
+      resolve(file); // Fallback to original file on error
+    };
+  });
+}
+
+/**
  * Uploads multiple files to Cloudinary using server-signed requests.
  * Processes files in concurrent workers (limit: 5).
  *
@@ -50,8 +115,11 @@ export async function uploadPhotosToCloudinary(files, onProgress) {
       if (!file) continue;
 
       try {
+        // Compress the image file client-side
+        const processedFile = await compressImage(file);
+
         const formData = new FormData();
-        formData.append('file', file);
+        formData.append('file', processedFile);
         formData.append('api_key', api_key);
         formData.append('timestamp', timestamp);
         formData.append('signature', signature);

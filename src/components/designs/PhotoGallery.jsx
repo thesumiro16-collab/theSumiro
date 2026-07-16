@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import PlaceholderImage from '../ui/PlaceholderImage';
+import { getOptimizedImageUrl } from '../../utils/formatters';
 
 // ─── Canvas watermark helpers ────────────────────────────────────────────────
 function drawRoundRect(ctx, x, y, width, height, radius, fill, stroke) {
@@ -173,7 +174,7 @@ export default function PhotoGallery({ photos, designNo }) {
       >
         <img
           key={photo.secure_url}
-          src={photo.secure_url}
+          src={getOptimizedImageUrl(photo.secure_url, 800)}
           alt={`Design ${designNo} — photo ${current + 1}`}
           style={{
             width: '100%',
@@ -307,7 +308,7 @@ export default function PhotoGallery({ photos, designNo }) {
               }}
             >
               <img
-                src={p.secure_url}
+                src={getOptimizedImageUrl(p.secure_url, 120)}
                 alt={`Thumb ${i + 1}`}
                 style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
               />

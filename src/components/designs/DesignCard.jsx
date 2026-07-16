@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import PlaceholderImage from '../ui/PlaceholderImage';
-import { formatRate } from '../../utils/formatters';
+import { formatRate, getOptimizedImageUrl } from '../../utils/formatters';
 
 export default function DesignCard({ design, photos }) {
   const firstPhoto = photos && photos.length > 0 ? photos[0] : null;
@@ -33,7 +33,7 @@ export default function DesignCard({ design, photos }) {
       <div style={{ position: 'relative', width: '100%', aspectRatio: '1', overflow: 'hidden', background: '#F7F5F1' }}>
         {firstPhoto ? (
           <img
-            src={firstPhoto.secure_url}
+            src={getOptimizedImageUrl(firstPhoto.secure_url, 400)}
             alt={design.fabric_name}
             loading="lazy"
             decoding="async"

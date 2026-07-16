@@ -29,3 +29,17 @@ export function formatRate(n) {
     currency: 'INR',
   }).format(n);
 }
+
+/**
+ * Transforms a raw Cloudinary URL to request optimized, web-friendly dimensions.
+ * Reduces bandwidth requirements by up to 90%.
+ * @param {string} url - Original secure Cloudinary URL
+ * @param {number} width - Maximum requested width pixels
+ * @returns {string} Optimized URL
+ */
+export function getOptimizedImageUrl(url, width = 400) {
+  if (!url) return '';
+  if (!url.includes('cloudinary.com')) return url; // Pass non-Cloudinary images through untouched
+  return url.replace('/upload/', `/upload/f_auto,q_auto,w_${width},c_scale/`);
+}
+
