@@ -1,6 +1,13 @@
+import Seo from '../../components/ui/Seo';
+
 export default function ProductsPage() {
   return (
     <div className="max-w-5xl mx-auto px-6 sm:px-8 py-20 space-y-16 animate-fade-in">
+      <Seo
+        title="Collections"
+        description="Access our private archive of premium fabrics, curated patterns, and bespoke catalogs tailored for high-fashion innovators."
+        path="/products"
+      />
       <div className="text-center max-w-2xl mx-auto space-y-4">
         <h1 className="text-4xl sm:text-5xl font-serif text-gray-950 font-light">The Collections</h1>
         <div className="w-12 h-[1.5px] bg-accent mx-auto" />

@@ -1,9 +1,11 @@
 import { useState, useEffect, useRef } from 'react';
 import { useSettings } from '../../contexts/SettingsContext';
+import Seo from '../../components/ui/Seo';
 import { supabase } from '../../lib/supabase';
 
 export default function ComingSoonPage() {
   const { settings } = useSettings();
+  const comingSoonDescription = settings.countdown_description || 'We are preparing a brand new collection of premium woven silks and jacquards. Stay tuned for the drop!';
   const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
   const [isLapsed, setIsLapsed] = useState(false);
   const canvasRef = useRef(null);
@@ -165,6 +167,11 @@ export default function ComingSoonPage() {
       position: 'relative',
       overflow: 'hidden',
     }}>
+      <Seo
+        title="Coming Soon"
+        description={comingSoonDescription}
+        path="/coming-soon"
+      />
       {/* Background Interactive Weaving Canvas */}
       <canvas
         ref={canvasRef}

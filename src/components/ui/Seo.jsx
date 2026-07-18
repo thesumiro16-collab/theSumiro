@@ -16,14 +16,14 @@ const FALLBACK_IMAGE = `${SITE_URL}/favicon.png`;
  *   <Seo title="About Us" description="..." path="/about" />
  */
 function upsertMeta(attr, key, content) {
-  if (!content) return;
   let el = document.head.querySelector(`meta[${attr}="${key}"]`);
   if (!el) {
     el = document.createElement('meta');
     el.setAttribute(attr, key);
     document.head.appendChild(el);
   }
-  el.setAttribute('content', content);
+  // Always update — even if content is empty string (clears stale values)
+  el.setAttribute('content', content ?? '');
 }
 
 function upsertCanonical(href) {
@@ -36,38 +36,40 @@ function upsertCanonical(href) {
   el.setAttribute('href', href);
 }
 
-export default function Seo({ title, description, path = '/', noindex = false }) {
+export default function Seo({ title, fullTitle: fullTitleProp, description, path = '/', noindex = false }) {
   const { settings } = useSettings();
 
   useEffect(() => {
-    const fullTitle = title
-      ? `${title} — ${SITE_NAME}`
-      : `${SITE_NAME} — Premium Fabric Designs from Surat, India`;
+    const fullTitle = fullTitleProp
+      ? fullTitleProp
+      : title
+        ? `${title} — ${SITE_NAME}`
+        : `${SITE_NAME} — Premium Fabric Designs from Surat, India`;
     const url      = `${SITE_URL}${path}`;
     const ogImage  = settings.seo_og_image || FALLBACK_IMAGE;
-    const keywords = settings.seo_keywords;
-    const gVerify  = settings.seo_google_verification;
+    const keywords = settings.seo_keywords || '';
+    const gVerify  = settings.seo_google_verification || '';
 
     document.title = fullTitle;
 
-    upsertMeta('name', 'description',          description);
-    upsertMeta('name', 'keywords',             keywords);
-    upsertMeta('name', 'robots',               noindex ? 'noindex, nofollow' : 'index, follow');
-    upsertMeta('name', 'google-site-verification', gVerify);
+    upsertMeta('name', 'description',               description || '');
+    upsertMeta('name', 'keywords',                   keywords);
+    upsertMeta('name', 'robots',                     noindex ? 'noindex, nofollow' : 'index, follow');
+    upsertMeta('name', 'google-site-verification',   gVerify);
     upsertCanonical(url);
 
     // Open Graph
     upsertMeta('property', 'og:title',       fullTitle);
-    upsertMeta('property', 'og:description', description);
+    upsertMeta('property', 'og:description', description || '');
     upsertMeta('property', 'og:url',         url);
     upsertMeta('property', 'og:image',       ogImage);
 
     // Twitter
     upsertMeta('name', 'twitter:title',       fullTitle);
-    upsertMeta('name', 'twitter:description', description);
+    upsertMeta('name', 'twitter:description', description || '');
     upsertMeta('name', 'twitter:image',       ogImage);
   }, [
-    title, description, path, noindex,
+    title, fullTitleProp, description, path, noindex,
     settings.seo_og_image,
     settings.seo_keywords,
     settings.seo_google_verification,
