@@ -100,6 +100,34 @@ export function useDesignDetail(id) {
     [id, design, photos, addToast]
   );
 
+  const reorderPhotos = useCallback(
+    async (reordered) => {
+      // reordered: array of photo objects in the new desired order
+      const updated = reordered.map((p, i) => ({ ...p, sort_order: i }));
+      setPhotos(updated); // optimistic update
+
+      try {
+        // Use UPDATE (not upsert) — all rows already exist, and upsert would
+        // trigger the INSERT RLS policy which requires created_by = auth.uid().
+        const results = await Promise.all(
+          updated.map(p =>
+            supabase
+              .from('design_photos')
+              .update({ sort_order: p.sort_order })
+              .eq('id', p.id)
+          )
+        );
+        const firstErr = results.find(r => r.error)?.error;
+        if (firstErr) throw firstErr;
+      } catch (err) {
+        // Revert on failure
+        setPhotos(prev => [...prev].sort((a, b) => a.sort_order - b.sort_order));
+        addToast({ type: 'error', message: 'Failed to save photo order' });
+      }
+    },
+    [addToast]
+  );
+
   const deletePhoto = useCallback(
     async (photo) => {
       try {
@@ -137,6 +165,7 @@ export function useDesignDetail(id) {
     updateField,
     updateFolderCount: updateField,
     uploadAndAddPhotos,
-    deletePhoto
+    deletePhoto,
+    reorderPhotos,
   };
 }

@@ -55,9 +55,41 @@ export default function DesignForm({ onSuccess }) {
   const [dragOver, setDragOver] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(null); // { current, total }
 
+  // Drag-to-reorder state for preview grid
+  const [draggedIdx, setDraggedIdx] = useState(null);
+  const [dragOverIdx, setDragOverIdx] = useState(null);
+
+  const handlePreviewDragStart = (e, idx) => {
+    setDraggedIdx(idx);
+    e.dataTransfer.effectAllowed = 'move';
+  };
+  const handlePreviewDragOver = (e, idx) => {
+    e.preventDefault();
+    if (idx !== draggedIdx) setDragOverIdx(idx);
+  };
+  const handlePreviewDrop = (e, targetIdx) => {
+    e.preventDefault();
+    if (draggedIdx === null || draggedIdx === targetIdx) {
+      setDraggedIdx(null); setDragOverIdx(null); return;
+    }
+    const newFiles = [...files];
+    const newPreviews = [...previews];
+    const [mFile] = newFiles.splice(draggedIdx, 1);
+    const [mPrev] = newPreviews.splice(draggedIdx, 1);
+    newFiles.splice(targetIdx, 0, mFile);
+    newPreviews.splice(targetIdx, 0, mPrev);
+    setFiles(newFiles);
+    setPreviews(newPreviews);
+    setDraggedIdx(null); setDragOverIdx(null);
+  };
+  const handlePreviewDragEnd = () => { setDraggedIdx(null); setDragOverIdx(null); };
+
+  const NUMERIC_FIELDS = new Set(['rate', 'extra_folder', 'office_folder', 'bag_folder']);
+
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setForm(prev => ({ ...prev, [name]: value }));
+    const normalized = NUMERIC_FIELDS.has(name) ? value : value.toUpperCase();
+    setForm(prev => ({ ...prev, [name]: normalized }));
     setErrors(prev => ({ ...prev, [name]: undefined }));
   };
 
@@ -274,32 +306,90 @@ export default function DesignForm({ onSuccess }) {
         {/* Previews grid */}
         {previews.length > 0 && (
           <div style={{ marginTop: '16px' }}>
-            <p style={{ fontFamily: 'var(--font-sans)', fontSize: '12px', color: 'var(--color-text-muted)', marginBottom: '10px' }}>
-              {previews.length} photo{previews.length !== 1 ? 's' : ''} selected
-            </p>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
+              <p style={{ fontFamily: 'var(--font-sans)', fontSize: '12px', color: 'var(--color-text-muted)' }}>
+                {previews.length} photo{previews.length !== 1 ? 's' : ''} selected
+              </p>
+              {previews.length > 1 && (
+                <p style={{ fontFamily: 'var(--font-sans)', fontSize: '10px', color: 'var(--color-text-muted)', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                  <svg width="10" height="10" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M8 9h8M8 12h8M8 15h8" /></svg>
+                  Drag to reorder
+                </p>
+              )}
+            </div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(72px, 1fr))', gap: '10px' }}>
               {previews.map((preview, index) => (
-                <div key={index} style={{ position: 'relative', borderRadius: '8px', overflow: 'hidden', border: '1px solid var(--color-border)', aspectRatio: '1/1' }}>
-                  <img src={preview.url} alt={`Preview ${index + 1}`} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
-                  <button
-                    type="button"
-                    onClick={() => removePhoto(index)}
-                    aria-label={`Remove ${preview.name}`}
-                    style={{
-                      position: 'absolute', top: '4px', right: '4px',
-                      width: '20px', height: '20px',
-                      borderRadius: '50%',
-                      background: '#EF4444',
-                      color: '#FFFFFF',
-                      border: 'none',
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      fontWeight: 700, fontSize: '12px',
-                      cursor: 'pointer',
-                      boxShadow: '0 2px 6px rgba(0,0,0,0.2)',
-                    }}
-                  >
-                    ×
-                  </button>
+                <div
+                  key={index}
+                  draggable
+                  onDragStart={(e) => handlePreviewDragStart(e, index)}
+                  onDragOver={(e) => handlePreviewDragOver(e, index)}
+                  onDrop={(e) => handlePreviewDrop(e, index)}
+                  onDragEnd={handlePreviewDragEnd}
+                  style={{
+                    position: 'relative',
+                    borderRadius: '8px',
+                    overflow: 'hidden',
+                    border: dragOverIdx === index
+                      ? '2px dashed #E8890C'
+                      : '1px solid var(--color-border)',
+                    aspectRatio: '1/1',
+                    opacity: draggedIdx === index ? 0.4 : 1,
+                    transform: dragOverIdx === index ? 'scale(1.05)' : 'scale(1)',
+                    transition: 'border-color 0.15s, opacity 0.15s, transform 0.15s',
+                    cursor: 'grab',
+                    boxShadow: dragOverIdx === index ? '0 4px 12px rgba(232,137,12,0.2)' : 'none',
+                  }}
+                >
+                  <img src={preview.url} alt={`Preview ${index + 1}`} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', pointerEvents: 'none' }} />
+
+                  {/* Position badge */}
+                  {previews.length > 1 && draggedIdx === null && (
+                    <div style={{
+                      position: 'absolute', bottom: '3px', left: '3px',
+                      background: 'rgba(0,0,0,0.55)', color: '#FFF',
+                      borderRadius: '3px', padding: '1px 4px',
+                      fontFamily: 'var(--font-sans)', fontSize: '9px', fontWeight: 700,
+                      pointerEvents: 'none',
+                    }}>
+                      {index + 1}
+                    </div>
+                  )}
+
+                  {/* Drag handle */}
+                  {previews.length > 1 && draggedIdx === null && (
+                    <div style={{
+                      position: 'absolute', top: '3px', left: '3px',
+                      color: 'rgba(255,255,255,0.85)', pointerEvents: 'none',
+                    }}>
+                      <svg width="10" height="10" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M8 6a2 2 0 110-4 2 2 0 010 4zm0 8a2 2 0 110-4 2 2 0 010 4zm0 8a2 2 0 110-4 2 2 0 010 4zm8-16a2 2 0 110-4 2 2 0 010 4zm0 8a2 2 0 110-4 2 2 0 010 4zm0 8a2 2 0 110-4 2 2 0 010 4z" />
+                      </svg>
+                    </div>
+                  )}
+
+                  {/* Remove button */}
+                  {draggedIdx === null && (
+                    <button
+                      type="button"
+                      onClick={() => removePhoto(index)}
+                      aria-label={`Remove ${preview.name}`}
+                      style={{
+                        position: 'absolute', top: '4px', right: '4px',
+                        width: '20px', height: '20px',
+                        borderRadius: '50%',
+                        background: '#EF4444',
+                        color: '#FFFFFF',
+                        border: 'none',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        fontWeight: 700, fontSize: '12px',
+                        cursor: 'pointer',
+                        boxShadow: '0 2px 6px rgba(0,0,0,0.2)',
+                      }}
+                    >
+                      ×
+                    </button>
+                  )}
                 </div>
               ))}
             </div>

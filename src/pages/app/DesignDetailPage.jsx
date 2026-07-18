@@ -31,7 +31,7 @@ const MetaRow = ({ label, value }) => (
 
 export default function DesignDetailPage() {
   const { id } = useParams();
-  const { design, photos, loading, error, refetch, updateField, uploadAndAddPhotos, deletePhoto } = useDesignDetail(id);
+  const { design, photos, loading, error, refetch, updateField, uploadAndAddPhotos, deletePhoto, reorderPhotos } = useDesignDetail(id);
   const { addToast } = useToast();
   const { canWrite } = useAuth();
   const isWritable = canWrite('dashboard');
@@ -45,6 +45,37 @@ export default function DesignDetailPage() {
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(null);
   const [confirmDeletePhoto, setConfirmDeletePhoto] = useState(null); // photo id pending confirm
+
+  // Drag-to-reorder state
+  const [draggedId, setDraggedId] = useState(null);
+  const [dragOverId, setDragOverId] = useState(null);
+
+  const handleDragStart = (e, id) => {
+    setDraggedId(id);
+    e.dataTransfer.effectAllowed = 'move';
+  };
+
+  const handleDragOver = (e, id) => {
+    e.preventDefault();
+    if (id !== draggedId) setDragOverId(id);
+  };
+
+  const handleDrop = (e, targetId) => {
+    e.preventDefault();
+    if (!draggedId || draggedId === targetId) {
+      setDraggedId(null); setDragOverId(null); return;
+    }
+    const from = photos.findIndex(p => p.id === draggedId);
+    const to   = photos.findIndex(p => p.id === targetId);
+    if (from === -1 || to === -1) { setDraggedId(null); setDragOverId(null); return; }
+    const reordered = [...photos];
+    const [moved] = reordered.splice(from, 1);
+    reordered.splice(to, 0, moved);
+    reorderPhotos(reordered);
+    setDraggedId(null); setDragOverId(null);
+  };
+
+  const handleDragEnd = () => { setDraggedId(null); setDragOverId(null); };
 
 
 
@@ -404,13 +435,72 @@ export default function DesignDetailPage() {
       <Modal isOpen={editPhotosOpen} onClose={() => setEditPhotosOpen(false)} title="Manage Design Photos">
         <div style={{ padding: '4px 0 10px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
           <div>
-            <p style={{ fontFamily: 'var(--font-sans)', fontSize: '11px', fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', color: '#A3A3A3', marginBottom: '12px' }}>
-              Current Photos ({photos.length})
-            </p>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+              <p style={{ fontFamily: 'var(--font-sans)', fontSize: '11px', fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', color: '#A3A3A3' }}>
+                Current Photos ({photos.length})
+              </p>
+              {photos.length > 1 && (
+                <p style={{ fontFamily: 'var(--font-sans)', fontSize: '10px', color: '#A3A3A3', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                  <svg width="11" height="11" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M8 9h8M8 12h8M8 15h8" /></svg>
+                  Drag to reorder
+                </p>
+              )}
+            </div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(96px, 1fr))', gap: '12px' }}>
-              {photos.map((p) => (
-                <div key={p.id} style={{ position: 'relative', borderRadius: '10px', overflow: 'hidden', border: `1px solid ${confirmDeletePhoto === p.id ? '#DC2626' : 'var(--color-border)'}`, aspectRatio: '1', background: '#F7F5F1', transition: 'border-color 0.2s' }}>
-                  <img src={p.secure_url} alt="Design thumbnail" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              {photos.map((p, idx) => (
+                <div
+                  key={p.id}
+                  draggable={!isDeleting[p.id] && !isUploading && confirmDeletePhoto !== p.id}
+                  onDragStart={(e) => handleDragStart(e, p.id)}
+                  onDragOver={(e) => handleDragOver(e, p.id)}
+                  onDrop={(e) => handleDrop(e, p.id)}
+                  onDragEnd={handleDragEnd}
+                  style={{
+                    position: 'relative',
+                    borderRadius: '10px',
+                    overflow: 'hidden',
+                    border: confirmDeletePhoto === p.id
+                      ? '2px solid #DC2626'
+                      : dragOverId === p.id
+                      ? '2px dashed #E8890C'
+                      : '1px solid var(--color-border)',
+                    aspectRatio: '1',
+                    background: '#F7F5F1',
+                    transition: 'border-color 0.15s, opacity 0.15s, transform 0.15s',
+                    opacity: draggedId === p.id ? 0.4 : 1,
+                    transform: dragOverId === p.id ? 'scale(1.03)' : 'scale(1)',
+                    cursor: confirmDeletePhoto === p.id ? 'default' : 'grab',
+                    boxShadow: dragOverId === p.id ? '0 4px 16px rgba(232,137,12,0.22)' : 'none',
+                  }}
+                >
+                  <img src={p.secure_url} alt={`Design photo ${idx + 1}`} style={{ width: '100%', height: '100%', objectFit: 'cover', pointerEvents: 'none' }} />
+
+                  {/* Position badge */}
+                  {photos.length > 1 && draggedId === null && confirmDeletePhoto !== p.id && (
+                    <div style={{
+                      position: 'absolute', bottom: '4px', left: '4px',
+                      background: 'rgba(0,0,0,0.55)', color: '#FFF',
+                      borderRadius: '4px', padding: '1px 5px',
+                      fontFamily: 'var(--font-sans)', fontSize: '9px', fontWeight: 700,
+                      pointerEvents: 'none',
+                    }}>
+                      {idx + 1}
+                    </div>
+                  )}
+
+                  {/* Drag handle overlay (shown when not in delete-confirm mode) */}
+                  {photos.length > 1 && confirmDeletePhoto !== p.id && draggedId === null && (
+                    <div style={{
+                      position: 'absolute', top: '4px', left: '4px',
+                      color: 'rgba(255,255,255,0.85)',
+                      pointerEvents: 'none',
+                      lineHeight: 1,
+                    }}>
+                      <svg width="12" height="12" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M8 6a2 2 0 110-4 2 2 0 010 4zm0 8a2 2 0 110-4 2 2 0 010 4zm0 8a2 2 0 110-4 2 2 0 010 4zm8-16a2 2 0 110-4 2 2 0 010 4zm0 8a2 2 0 110-4 2 2 0 010 4zm0 8a2 2 0 110-4 2 2 0 010 4z" />
+                      </svg>
+                    </div>
+                  )}
 
                   {/* Inline confirm overlay */}
                   {confirmDeletePhoto === p.id && (
@@ -433,7 +523,7 @@ export default function DesignDetailPage() {
                   )}
 
                   {/* Initial delete trigger button */}
-                  {confirmDeletePhoto !== p.id && (
+                  {confirmDeletePhoto !== p.id && draggedId === null && (
                     <button
                       onClick={() => setConfirmDeletePhoto(p.id)}
                       disabled={isDeleting[p.id] || isUploading}
