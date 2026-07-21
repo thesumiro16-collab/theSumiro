@@ -5,6 +5,179 @@ import { supabase } from '../../lib/supabase';
 import { useSettings } from '../../hooks/useSettings';
 import Spinner from '../../components/ui/Spinner';
 
+function parseStoryText(text) {
+  if (!text) return { paragraphs: [], lists: { manufacture: [], process: [], chooseUs: [] } };
+
+  const lines = text.split('\n').map(l => l.trim());
+  const paragraphs = [];
+  const lists = {
+    manufacture: [],
+    process: [],
+    chooseUs: [],
+  };
+
+  let currentKey = null;
+  let currentParagraph = [];
+
+  for (let line of lines) {
+    if (!line) {
+      if (currentParagraph.length > 0 && !currentKey) {
+        paragraphs.push(currentParagraph.join(' '));
+        currentParagraph = [];
+      }
+      continue;
+    }
+
+    const cleanLine = line.toLowerCase();
+    
+    // Check for sections
+    if (cleanLine.includes('what we manufacture')) {
+      if (currentParagraph.length > 0) {
+        paragraphs.push(currentParagraph.join(' '));
+        currentParagraph = [];
+      }
+      currentKey = 'manufacture';
+      continue;
+    } else if (cleanLine.includes('our manufacturing process')) {
+      if (currentParagraph.length > 0) {
+        paragraphs.push(currentParagraph.join(' '));
+        currentParagraph = [];
+      }
+      currentKey = 'process';
+      continue;
+    } else if (cleanLine.includes('why customers choose us')) {
+      if (currentParagraph.length > 0) {
+        paragraphs.push(currentParagraph.join(' '));
+        currentParagraph = [];
+      }
+      currentKey = 'chooseUs';
+      continue;
+    }
+
+    // Detect new paragraph starts that should break out of lists
+    const isNewParaStart = 
+      line.startsWith('We believe') || 
+      line.startsWith('Today,') || 
+      line.startsWith('Our goal') || 
+      line.startsWith('At The Sumiro');
+
+    if (currentKey && isNewParaStart) {
+      currentKey = null;
+    }
+
+    if (currentKey) {
+      const cleanedItem = line.replace(/^[-*•\s:]+/, '').trim();
+      if (cleanedItem) {
+        lists[currentKey].push(cleanedItem);
+      }
+    } else {
+      currentParagraph.push(line);
+    }
+  }
+
+  if (currentParagraph.length > 0) {
+    paragraphs.push(currentParagraph.join(' '));
+  }
+
+  return { paragraphs, lists };
+}
+
+function renderInstagramReel(value, idx) {
+  if (!value) return null;
+
+  const trimmed = value.trim();
+
+  // Case A: Raw Embed Code (blockquote or iframe)
+  if (trimmed.startsWith('<') && (trimmed.includes('blockquote') || trimmed.includes('iframe'))) {
+    return (
+      <div 
+        className="instagram-embed-container"
+        dangerouslySetInnerHTML={{ __html: trimmed }} 
+        style={{
+          position: 'absolute', inset: 0,
+          width: '100%', height: '100%',
+          border: 'none', overflow: 'hidden',
+          display: 'flex', alignItems: 'center', justifyContent: 'center'
+        }}
+      />
+    );
+  }
+
+  // Case B: Regular Instagram URL
+  if (trimmed.includes('instagram.com/reel/') || trimmed.includes('instagram.com/p/')) {
+    let embedUrl = trimmed;
+    if (!embedUrl.endsWith('/')) embedUrl += '/';
+    if (!embedUrl.includes('/embed/')) {
+      embedUrl = embedUrl.split('?')[0] + 'embed/';
+    }
+    return (
+      <iframe
+        src={embedUrl}
+        title={`Instagram Reel ${idx + 1}`}
+        style={{
+          position: 'absolute', inset: 0,
+          width: '100%', height: '100%',
+          border: 'none', overflow: 'hidden'
+        }}
+        scrolling="no"
+        allowTransparency
+        allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share"
+      />
+    );
+  }
+
+  // Case C: Native HTML5 MP4 Loop
+  return (
+    <>
+      <video
+        src={trimmed}
+        autoPlay
+        loop
+        muted
+        playsInline
+        style={{
+          position: 'absolute', inset: 0,
+          width: '100%', height: '100%',
+          objectFit: 'cover',
+        }}
+      />
+      {/* Overlays */}
+      <div style={{
+        position: 'absolute', inset: 0,
+        background: 'linear-gradient(to top, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.1) 50%, rgba(0,0,0,0.3) 100%)',
+        zIndex: 2,
+        padding: '20px',
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'space-between',
+      }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+          <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24" style={{ color: '#FFFFFF', opacity: 0.9 }}>
+            <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z" />
+          </svg>
+          <div style={{
+            width: '28px', height: '28px', borderRadius: '50%',
+            background: 'rgba(255,255,255,0.2)', backdropFilter: 'blur(4px)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#FFFFFF'
+          }}>
+            <svg width="10" height="10" fill="currentColor" viewBox="0 0 24 24">
+              <polygon points="6,3 20,12 6,21" />
+            </svg>
+          </div>
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', textAlign: 'left' }}>
+          <span style={{ fontFamily: 'var(--font-sans)', fontSize: '12px', fontWeight: 700, color: '#FFFFFF', letterSpacing: '0.02em' }}>
+            @the.sumiro
+          </span>
+          <span style={{ fontFamily: 'var(--font-sans)', fontSize: '10px', color: 'rgba(255,255,255,0.85)' }}>
+            Click to Watch Loom Video
+          </span>
+        </div>
+      </div>
+    </>
+  );
+}
+
 const optimizeCloudinaryUrl = (url) => {
   if (!url) return '';
   if (url.includes('cloudinary.com') && url.includes('/upload/')) {
@@ -84,9 +257,46 @@ const slides = [
 
 export default function HomePage() {
   const { settings, loading } = useSettings();
+  
+  const p1Parsed = parseStoryText(settings.about_story_p1);
+  const p2Parsed = parseStoryText(settings.about_story_p2);
+
+  const defaultManufacture = [
+    'Premium Silks & Zari Brocades',
+    'Luxury Jacquard Weave Textiles',
+    'Bespoke Artisanal Embroideries'
+  ];
+
+  const defaultProcess = [
+    'Raw Silk & Thread Sourcing',
+    'Computerized CAD Design Patterns',
+    'Modern High-Precision Looms Production'
+  ];
+
+  const defaultChooseUs = [
+    'Flawless Thread Consistency',
+    'Guaranteed On-Time Dispatches',
+    'Custom Designing Support'
+  ];
+
+  const combinedLists = {
+    manufacture: settings.craft_manufacture_list?.length > 0
+      ? settings.craft_manufacture_list
+      : defaultManufacture,
+    process: settings.craft_process_list?.length > 0
+      ? settings.craft_process_list
+      : defaultProcess,
+    chooseUs: settings.craft_promise_list?.length > 0
+      ? settings.craft_promise_list
+      : defaultChooseUs,
+  };
+
+  const hasLists = true;
+
   const foundingYear = parseInt(settings.about_founding_year, 10) || 2006;
   const yearsOfHeritage = Math.max(1, new Date().getFullYear() - foundingYear);
   const [activeSlide, setActiveSlide] = useState(0);
+  const [activeTab, setActiveTab] = useState('manufacture');
   const [isPlayingFactoryVideo, setIsPlayingFactoryVideo] = useState(false);
   const [isHoveringVideo, setIsHoveringVideo] = useState(false);
   const [marqueeTags, setMarqueeTags] = useState([
@@ -115,6 +325,21 @@ export default function HomePage() {
     }
     loadMarquee();
   }, []);
+
+  // Handle Instagram embeds processing when settings change
+  useEffect(() => {
+    if (document.querySelector('.instagram-media')) {
+      if (!document.getElementById('instagram-embed-script')) {
+        const script = document.createElement('script');
+        script.id = 'instagram-embed-script';
+        script.async = true;
+        script.src = '//www.instagram.com/embed.js';
+        document.body.appendChild(script);
+      } else if (window.instgrm) {
+        window.instgrm.Embeds.process();
+      }
+    }
+  }, [settings]);
 
   // Intersection Observer for scroll-reveal animations
   useEffect(() => {
@@ -399,6 +624,302 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* ── SECTION: OUR CRAFT & PROCESS (Dynamic Cabinet Display on Home Page) ─────────── */}
+      {hasLists && (
+        <section
+          aria-label="Our Craft and Process"
+          className="reveal-item"
+          style={{
+            background: '#FFFFFF',
+            padding: '100px 24px',
+            borderTop: '1px solid var(--color-border)',
+          }}
+        >
+          <div style={{ maxWidth: '1080px', margin: '0 auto' }}>
+            {/* Section Header */}
+            <div style={{ textAlign: 'center', marginBottom: '48px' }}>
+              <span style={{
+                fontFamily: 'var(--font-sans)',
+                fontSize: '13px',
+                fontWeight: 700,
+                letterSpacing: '0.24em',
+                textTransform: 'uppercase',
+                color: '#E8890C',
+                display: 'block',
+                marginBottom: '16px'
+              }}>
+                [ {settings.craft_section_subtitle || 'Our Craft & Process'} ]
+              </span>
+              <h2 style={{
+                fontFamily: 'var(--font-serif)',
+                fontSize: 'clamp(2rem, 4.5vw, 2.8rem)',
+                fontWeight: 300,
+                color: '#1A1A1A',
+                letterSpacing: '-0.02em',
+                textTransform: 'uppercase',
+                lineHeight: 1.2,
+                margin: '0 auto',
+              }}>
+                {settings.craft_section_title || 'Woven with Intention, Crafted to Inspire'}
+              </h2>
+            </div>
+
+            {/* Dynamic Luxury Tabs Switcher */}
+            <div style={{
+              display: 'flex',
+              justifyContent: 'center',
+              gap: '12px',
+              marginBottom: '32px',
+              borderBottom: '1px solid #EAE6DF',
+              paddingBottom: '8px',
+              flexWrap: 'wrap'
+            }}>
+              {combinedLists.manufacture.length > 0 && (
+                <button
+                  onClick={() => setActiveTab('manufacture')}
+                  style={{
+                    fontFamily: 'var(--font-sans)',
+                    fontSize: '12px',
+                    fontWeight: 700,
+                    letterSpacing: '0.12em',
+                    textTransform: 'uppercase',
+                    background: 'none',
+                    border: 'none',
+                    outline: 'none',
+                    color: activeTab === 'manufacture' ? '#E8890C' : '#888275',
+                    padding: '12px 24px',
+                    cursor: 'pointer',
+                    position: 'relative',
+                    transition: 'all 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
+                  }}
+                >
+                  What We Manufacture
+                  {activeTab === 'manufacture' && (
+                    <div style={{
+                      position: 'absolute', bottom: '-9px', left: 0, right: 0,
+                      height: '2.5px', background: '#E8890C', borderRadius: '1px'
+                    }} />
+                  )}
+                </button>
+              )}
+
+              {combinedLists.process.length > 0 && (
+                <button
+                  onClick={() => setActiveTab('process')}
+                  style={{
+                    fontFamily: 'var(--font-sans)',
+                    fontSize: '12px',
+                    fontWeight: 700,
+                    letterSpacing: '0.12em',
+                    textTransform: 'uppercase',
+                    background: 'none',
+                    border: 'none',
+                    outline: 'none',
+                    color: activeTab === 'process' ? '#E8890C' : '#888275',
+                    padding: '12px 24px',
+                    cursor: 'pointer',
+                    position: 'relative',
+                    transition: 'all 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
+                  }}
+                >
+                  Our Process
+                  {activeTab === 'process' && (
+                    <div style={{
+                      position: 'absolute', bottom: '-9px', left: 0, right: 0,
+                      height: '2.5px', background: '#E8890C', borderRadius: '1px'
+                    }} />
+                  )}
+                </button>
+              )}
+
+              {combinedLists.chooseUs.length > 0 && (
+                <button
+                  onClick={() => setActiveTab('chooseUs')}
+                  style={{
+                    fontFamily: 'var(--font-sans)',
+                    fontSize: '12px',
+                    fontWeight: 700,
+                    letterSpacing: '0.12em',
+                    textTransform: 'uppercase',
+                    background: 'none',
+                    border: 'none',
+                    outline: 'none',
+                    color: activeTab === 'chooseUs' ? '#E8890C' : '#888275',
+                    padding: '12px 24px',
+                    cursor: 'pointer',
+                    position: 'relative',
+                    transition: 'all 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
+                  }}
+                >
+                  Our Promise
+                  {activeTab === 'chooseUs' && (
+                    <div style={{
+                      position: 'absolute', bottom: '-9px', left: 0, right: 0,
+                      height: '2.5px', background: '#E8890C', borderRadius: '1px'
+                    }} />
+                  )}
+                </button>
+              )}
+            </div>
+
+            {/* Split Content Showcase Panel */}
+            <div style={{
+              background: '#F7F5F1',
+              border: '1.5px solid #E5E0D8',
+              borderRadius: '24px',
+              padding: '40px',
+              boxShadow: '0 8px 30px rgba(220, 212, 196, 0.06)',
+            }}>
+              {/* Tab 1 Content: Manufacture */}
+              {activeTab === 'manufacture' && combinedLists.manufacture.length > 0 && (
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '48px', alignItems: 'center' }}>
+                  {/* Left Column: Spool Graphic */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                    <div style={{
+                      width: '48px', height: '48px', borderRadius: '50%',
+                      background: '#FDF3E3', border: '1.5px solid #F5C97A',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      color: '#E8890C', marginBottom: '8px'
+                    }}>
+                      <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 21m0 0l-.813-5.096m.813 5.096a11.977 11.977 0 01-3.228-3.35m0 0a10.01 10.01 0 001.61-4.73C7.294 5.145 12 3 12 3s4.706 2.145 4.793 4.824c.057 1.76-.43 3.42-1.344 4.78a11.975 11.975 0 01-3.228 3.3m0 0l-.813 5.096m0 0l.813-5.096m-.813 0c-.394-.055-.783-.146-1.164-.272m.764-5.708a3 3 0 110-6 3 3 0 010 6z" />
+                      </svg>
+                    </div>
+                    <h3 style={{ fontFamily: 'var(--font-serif)', fontSize: '24px', fontWeight: 400, color: '#0A0A0A', margin: 0 }}>
+                      What We Manufacture
+                    </h3>
+                    <p style={{ fontFamily: 'var(--font-sans)', fontSize: '14px', color: '#736F66', lineHeight: 1.7, margin: 0 }}>
+                      {settings.craft_manufacture_desc || 'We supply premium fabric weaves designed to satisfy high-end boutique standards, luxury garment houses, and wholesale suppliers. Every meter represents flawless embroidery work and deep texture detail.'}
+                    </p>
+                  </div>
+                  {/* Right Column: Custom lists */}
+                  <div style={{
+                    background: '#FFFFFF',
+                    border: '1px solid #EAE6DF',
+                    borderRadius: '16px',
+                    padding: '28px',
+                    display: 'grid',
+                    gridTemplateColumns: '1fr',
+                    gap: '12px'
+                  }}>
+                    {combinedLists.manufacture.map((item, idx) => (
+                      <div key={idx} style={{
+                        fontFamily: 'var(--font-sans)', fontSize: '13.5px', color: '#3D3D3D',
+                        display: 'flex', alignItems: 'center', gap: '12px', paddingBottom: idx < combinedLists.manufacture.length - 1 ? '10px' : '0',
+                        borderBottom: idx < combinedLists.manufacture.length - 1 ? '1px dashed #EDEAE4' : 'none'
+                      }}>
+                        <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#E8890C', flexShrink: 0 }} />
+                        <span>{item}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Tab 2 Content: Process */}
+              {activeTab === 'process' && combinedLists.process.length > 0 && (
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '48px', alignItems: 'center' }}>
+                  {/* Left Column: Process Description */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                    <div style={{
+                      width: '48px', height: '48px', borderRadius: '50%',
+                      background: '#FDF3E3', border: '1px solid #F5C97A',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      color: '#E8890C', marginBottom: '8px'
+                    }}>
+                      <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                      </svg>
+                    </div>
+                    <h3 style={{ fontFamily: 'var(--font-serif)', fontSize: '24px', fontWeight: 400, color: '#0A0A0A', margin: 0 }}>
+                      Our Timeline & Flow
+                    </h3>
+                    <p style={{ fontFamily: 'var(--font-sans)', fontSize: '14px', color: '#736F66', lineHeight: 1.7, margin: 0 }}>
+                      {settings.craft_process_desc || 'Our manufacturing pipeline ensures complete precision from raw fabric sourcing through computerized design layouts, meticulous embroidery production, and multi-tier quality checks.'}
+                    </p>
+                  </div>
+                  {/* Right Column: Timeline Stepper */}
+                  <div style={{
+                    background: '#FFFFFF',
+                    border: '1px solid #EAE6DF',
+                    borderRadius: '16px',
+                    padding: '32px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '16px'
+                  }}>
+                    {combinedLists.process.map((item, idx) => (
+                      <div key={idx} style={{ display: 'flex', gap: '14px', alignItems: 'center' }}>
+                        <span style={{
+                          fontFamily: 'var(--font-sans)', fontSize: '10px', fontWeight: 700,
+                          width: '20px', height: '20px', borderRadius: '50%',
+                          background: '#E8890C', color: '#FFFFFF',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          flexShrink: 0
+                        }}>
+                          {idx + 1}
+                        </span>
+                        <span style={{ fontFamily: 'var(--font-sans)', fontSize: '13.5px', color: '#3D3D3D' }}>{item}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Tab 3 Content: Promise */}
+              {activeTab === 'chooseUs' && combinedLists.chooseUs.length > 0 && (
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '48px', alignItems: 'center' }}>
+                  {/* Left Column: Promise Description */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                    <div style={{
+                      width: '48px', height: '48px', borderRadius: '50%',
+                      background: '#FDF3E3', border: '1px solid #F5C97A',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      color: '#E8890C', marginBottom: '8px'
+                    }}>
+                      <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
+                      </svg>
+                    </div>
+                    <h3 style={{ fontFamily: 'var(--font-serif)', fontSize: '24px', fontWeight: 400, color: '#0A0A0A', margin: 0 }}>
+                      Our Core Promises
+                    </h3>
+                    <p style={{ fontFamily: 'var(--font-sans)', fontSize: '14px', color: '#736F66', lineHeight: 1.7, margin: 0 }}>
+                      {settings.craft_promise_desc || 'Our commitment to wholesalers, retailers, and export houses is absolute. We guarantee consistency in thread quality, reliable dispatch schedules, and premium manufacturing support.'}
+                    </p>
+                  </div>
+                  {/* Right Column: Promises checklist */}
+                  <div style={{
+                    background: '#FFFFFF',
+                    border: '1px solid #EAE6DF',
+                    borderRadius: '16px',
+                    padding: '28px',
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+                    gap: '12px'
+                  }}>
+                    {combinedLists.chooseUs.map((item, idx) => (
+                      <div key={idx} style={{
+                        fontFamily: 'var(--font-sans)', fontSize: '13px', color: '#3D3D3D',
+                        display: 'flex', alignItems: 'center', gap: '8px'
+                      }}>
+                        <span style={{
+                          color: '#15803D', display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                          width: '14px', height: '14px', borderRadius: '50%', background: 'rgba(34, 197, 94, 0.08)',
+                          border: '1px solid rgba(34, 197, 94, 0.25)', fontSize: '9px', fontWeight: 'bold', flexShrink: 0
+                        }}>✓</span>
+                        <span>{item}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </section>
+      )}
+
       {/* ── SECTION 3: VIDEO SHOWCASE (Etro-Style Single Cinematic Viewport) ───────────────── */}
       <section
         aria-label="Campaign Video"
@@ -590,6 +1111,8 @@ export default function HomePage() {
         </div>
       </section>
 
+      
+
       {/* ── SECTION 2: WHY CHOOSE US (Etro-Style Luxury Sand Section) ────────────────────── */}
       <section
         aria-label="Why Choose Us"
@@ -757,6 +1280,86 @@ export default function HomePage() {
           </div>
         </div>
       </section>
+
+      
+      {/* ── SECTION: INSTAGRAM REELS (Curated 3-Reel Showcase) ─────────────────────────── */}
+      <section
+        aria-label="Instagram Reels"
+        className="reveal-item"
+        style={{
+          background: '#FFFFFF',
+          padding: '100px 24px',
+          borderTop: '1px solid var(--color-border)',
+        }}
+      >
+        <div style={{ maxWidth: '1080px', margin: '0 auto' }}>
+          {/* Section Header */}
+          <div style={{ textAlign: 'center', marginBottom: '56px' }}>
+            <span style={{
+              fontFamily: 'var(--font-sans)',
+              fontSize: '13px',
+              fontWeight: 700,
+              letterSpacing: '0.24em',
+              textTransform: 'uppercase',
+              color: '#E8890C',
+              display: 'block',
+              marginBottom: '16px'
+            }}>
+              [ @the.sumiro on Instagram ]
+            </span>
+            <h2 style={{
+              fontFamily: 'var(--font-serif)',
+              fontSize: 'clamp(2rem, 4.5vw, 2.8rem)',
+              fontWeight: 300,
+              color: '#1A1A1A',
+              letterSpacing: '-0.02em',
+              textTransform: 'uppercase',
+              lineHeight: 1.2,
+              margin: '0 auto',
+            }}>
+              Behind the Looms, <span style={{ fontStyle: 'italic', color: '#E8890C', fontFamily: 'var(--font-serif)' }}>Active Reels</span>
+            </h2>
+          </div>
+
+          {/* 3 Reels Grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-8">
+            {[
+              settings.instagram_reel_1 || 'https://assets.mixkit.co/videos/preview/mixkit-sewing-machine-stitching-a-fabric-close-up-40455-large.mp4',
+              settings.instagram_reel_2 || 'https://assets.mixkit.co/videos/preview/mixkit-working-on-a-weaving-loom-40333-large.mp4',
+              settings.instagram_reel_3 || 'https://assets.mixkit.co/videos/preview/mixkit-fabrics-hanging-in-a-market-stall-40457-large.mp4'
+            ].map((reelUrl, idx) => (
+              <div
+                key={idx}
+                style={{
+                  position: 'relative',
+                  borderRadius: '20px',
+                  overflow: 'hidden',
+                  paddingTop: '177.77%', // 9:16 aspect ratio
+                  background: '#0B0B0A',
+                  boxShadow: '0 10px 30px rgba(10,10,10,0.05)',
+                  border: '1.5px solid #EAE6DF',
+                  transition: 'all 0.4s cubic-bezier(0.16, 1, 0.3, 1)',
+                }}
+                onMouseEnter={e => {
+                  e.currentTarget.querySelector('video')?.play().catch(() => {});
+                  e.currentTarget.style.transform = 'scale(1.03) translateY(-4px)';
+                  e.currentTarget.style.boxShadow = '0 20px 45px rgba(232,137,12,0.15)';
+                  e.currentTarget.style.borderColor = '#E8890C';
+                }}
+                onMouseLeave={e => {
+                  e.currentTarget.querySelector('video')?.pause();
+                  e.currentTarget.style.transform = 'none';
+                  e.currentTarget.style.boxShadow = '0 10px 30px rgba(10,10,10,0.05)';
+                  e.currentTarget.style.borderColor = '#EAE6DF';
+                }}
+              >
+                {renderInstagramReel(reelUrl, idx)}
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
 
       {/* CTA Band */}
       <section

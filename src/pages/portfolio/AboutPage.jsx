@@ -2,12 +2,104 @@ import { useSettings } from '../../hooks/useSettings';
 import Seo from '../../components/ui/Seo';
 import Spinner from '../../components/ui/Spinner';
 
+function parseStoryText(text) {
+  if (!text) return { paragraphs: [], lists: { manufacture: [], process: [], chooseUs: [] } };
+
+  const lines = text.split('\n').map(l => l.trim());
+  const paragraphs = [];
+  const lists = {
+    manufacture: [],
+    process: [],
+    chooseUs: [],
+  };
+
+  let currentKey = null;
+  let currentParagraph = [];
+
+  for (let line of lines) {
+    if (!line) {
+      if (currentParagraph.length > 0 && !currentKey) {
+        paragraphs.push(currentParagraph.join(' '));
+        currentParagraph = [];
+      }
+      continue;
+    }
+
+    const cleanLine = line.toLowerCase();
+    
+    // Check for sections
+    if (cleanLine.includes('what we manufacture')) {
+      if (currentParagraph.length > 0) {
+        paragraphs.push(currentParagraph.join(' '));
+        currentParagraph = [];
+      }
+      currentKey = 'manufacture';
+      continue;
+    } else if (cleanLine.includes('our manufacturing process')) {
+      if (currentParagraph.length > 0) {
+        paragraphs.push(currentParagraph.join(' '));
+        currentParagraph = [];
+      }
+      currentKey = 'process';
+      continue;
+    } else if (cleanLine.includes('why customers choose us')) {
+      if (currentParagraph.length > 0) {
+        paragraphs.push(currentParagraph.join(' '));
+        currentParagraph = [];
+      }
+      currentKey = 'chooseUs';
+      continue;
+    }
+
+    // Detect new paragraph starts that should break out of lists
+    const isNewParaStart = 
+      line.startsWith('We believe') || 
+      line.startsWith('Today,') || 
+      line.startsWith('Our goal') || 
+      line.startsWith('At The Sumiro');
+
+    if (currentKey && isNewParaStart) {
+      currentKey = null;
+    }
+
+    if (currentKey) {
+      const cleanedItem = line.replace(/^[-*•\s:]+/, '').trim();
+      if (cleanedItem) {
+        lists[currentKey].push(cleanedItem);
+      }
+    } else {
+      currentParagraph.push(line);
+    }
+  }
+
+  if (currentParagraph.length > 0) {
+    paragraphs.push(currentParagraph.join(' '));
+  }
+
+  return { paragraphs, lists };
+}
+
 export default function AboutPage() {
   const { settings, loading } = useSettings();
 
   if (loading) {
     return <Spinner fullPage />;
   }
+  const p1Parsed = parseStoryText(settings.about_story_p1);
+  const p2Parsed = parseStoryText(settings.about_story_p2);
+
+  const combinedParagraphs = [...(p1Parsed.paragraphs || []), ...(p2Parsed.paragraphs || [])];
+  const combinedLists = {
+    manufacture: [...(p1Parsed.lists?.manufacture || []), ...(p2Parsed.lists?.manufacture || [])],
+    process: [...(p1Parsed.lists?.process || []), ...(p2Parsed.lists?.process || [])],
+    chooseUs: [...(p1Parsed.lists?.chooseUs || []), ...(p2Parsed.lists?.chooseUs || [])],
+  };
+
+  const hasLists = 
+    combinedLists.manufacture.length > 0 ||
+    combinedLists.process.length > 0 ||
+    combinedLists.chooseUs.length > 0;
+
   const values = [
     {
       icon: (
@@ -87,28 +179,37 @@ export default function AboutPage() {
         <div style={{
           display: 'grid',
           gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
-          gap: '64px',
-          alignItems: 'center',
+          gap: '48px',
+          alignItems: 'start',
         }}>
           <div>
             <span className="pill-label" style={{ marginBottom: '24px', display: 'inline-flex' }}>Our Story</span>
             <h2 style={{
               fontFamily: 'var(--font-serif)',
-              fontSize: 'clamp(1.8rem, 3.5vw, 2.6rem)',
+              fontSize: 'clamp(2rem, 4vw, 2.8rem)',
               fontWeight: 400, color: '#0A0A0A',
-              marginBottom: '20px', lineHeight: 1.2,
+              marginBottom: '20px', lineHeight: 1.25,
             }}>
               {settings.about_story_title || "Rooted in Surat's Textile Heritage"}
             </h2>
             <div className="accent-line" style={{ marginBottom: '24px' }} />
           </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
-            <p style={{ fontFamily: 'var(--font-sans)', fontSize: '15px', color: '#3D3D3D', lineHeight: 1.8 }}>
-              {settings.about_story_p1 || "We started The Sumiro back in 2003, right here in Surat — a city that lives and breathes textiles. What began as a small operation has grown into a full-fledged fabric design factory, but our approach hasn't changed much. We still care about every design the same way we did on day one."}
-            </p>
-            <p style={{ fontFamily: 'var(--font-sans)', fontSize: '15px', color: '#737373', lineHeight: 1.8 }}>
-              {settings.about_story_p2 || "Our team includes designers and weavers who have spent years — some even decades — doing this. We combine that experience with modern machines to make sure you get great quality without long waiting times."}
-            </p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+            {combinedParagraphs.map((para, index) => (
+              <p
+                key={index}
+                style={{
+                  fontFamily: 'var(--font-sans)',
+                  fontSize: '15px',
+                  color: index === 0 ? '#3D3D3D' : '#737373',
+                  lineHeight: 1.85,
+                  whiteSpace: 'pre-line',
+                  margin: 0,
+                }}
+              >
+                {para}
+              </p>
+            ))}
           </div>
         </div>
       </section>
