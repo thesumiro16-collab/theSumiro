@@ -4,7 +4,6 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useSettings } from '../../contexts/SettingsContext';
 import { supabase } from '../../lib/supabase';
 import ToastContainer from '../ui/ToastContainer';
-import AppDownloadCard from '../ui/AppDownloadCard';
 
 const SIDEBAR_W = 288;
 const BREAKPOINT = 768;
@@ -313,8 +312,6 @@ export default function AdminLayout() {
           borderTop: '1px solid var(--color-border-soft)',
           flexShrink: 0,
         }}>
-          <AppDownloadCard compact />
-          <div style={{ height: '12px' }} />
           {user && (
             <div style={{ marginBottom: '10px', padding: '10px 6px', borderRadius: '8px', background: 'var(--color-bg-soft)' }}>
               <p style={{

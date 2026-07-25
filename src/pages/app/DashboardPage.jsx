@@ -8,7 +8,6 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../../contexts/ToastContext';
 import { supabase } from '../../lib/supabase';
 import { performVisualSearch } from '../../utils/visualSearch';
-import AppDownloadCard from '../../components/ui/AppDownloadCard';
 
 export default function DashboardPage() {
   const { designs, loading, error, page, totalPages, searchTerm, setPage, setSearchTerm, refetch } = useDesigns();
@@ -116,9 +115,6 @@ export default function DashboardPage() {
             </p>
           </div>
         </div>
-
-        {/* OS-Aware App Download Banner */}
-        <AppDownloadCard />
 
         {/* ── Section 2: Catalog Management ─────────────────────────── */}
         <div style={{ marginBottom: '28px' }}>
