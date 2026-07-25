@@ -93,10 +93,10 @@ function PublicLayout() {
 
 export default function App() {
   const hostname = window.location.hostname;
-  
+
   // Detect if strictly admin subdomain (starts with admin.)
   const isAdminSubdomain = hostname.startsWith('admin.');
-  
+
   // Detect if strictly public production domain (no admin prefix)
   const isStrictPublic = hostname === 'thesumiro.com' || hostname === 'www.thesumiro.com';
 

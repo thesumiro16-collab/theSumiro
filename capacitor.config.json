@@ -1,0 +1,9 @@
+{
+  "appId": "com.thesumiro.admin",
+  "appName": "Sumiro Admin",
+  "webDir": "dist",
+  "server": {
+    "url": "https://admin.thesumiro.com",
+    "cleartext": true
+  }
+}
