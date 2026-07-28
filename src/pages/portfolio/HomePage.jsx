@@ -402,7 +402,7 @@ export default function HomePage() {
   return (
     <div className="animate-fade-in">
       <Seo
-        fullTitle={settings.seo_home_title || 'The Sumiro — Premium Fabric Designs from Surat, India'}
+        fullTitle={(!settings.seo_home_title || settings.seo_home_title.includes('Premium Fabric')) ? 'The Sumiro' : settings.seo_home_title}
         description={settings.seo_home_description}
         path="/"
       />

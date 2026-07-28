@@ -44,7 +44,7 @@ export default function Seo({ title, fullTitle: fullTitleProp, description, path
       ? fullTitleProp
       : title
         ? `${title} — ${SITE_NAME}`
-        : `${SITE_NAME} — Premium Fabric Designs from Surat, India`;
+        : SITE_NAME;
     const url      = `${SITE_URL}${path}`;
     const ogImage  = settings.seo_og_image || FALLBACK_IMAGE;
     const keywords = settings.seo_keywords || '';

@@ -49,7 +49,7 @@ export const DEFAULT_SETTINGS = {
   seo_og_image: '',
   seo_favicon_url: '',
   seo_google_verification: 'N7yk9uw7RrScjpIep5-JQL2QrXxXd1pKWhx5mRha61Y',
-  seo_home_title: 'The Sumiro — Premium Fabric Designs from Surat, India',
+  seo_home_title: 'The Sumiro',
   seo_home_description: 'The Sumiro crafts premium silk brocades, jacquard weaves, and artisanal embroideries from Surat, India. Bespoke fabric designs blending heritage craftsmanship with modern looms since 2003.',
   seo_about_title: 'About Us',
   seo_about_description: 'Founded in Surat in 2003, The Sumiro is a fabric design factory blending traditional Indian craftsmanship with modern looms. Quality-first, on-time delivery, and innovative textile design.',
