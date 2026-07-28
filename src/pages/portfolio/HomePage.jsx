@@ -197,30 +197,29 @@ const features = [
     icon: (
       <svg {...iconProps}><path d="M12 3l2.5 5.5L20 9l-4 4 1 6-5-3-5 3 1-6-4-4 5.5-.5L12 3z" /></svg>
     ),
-    title: 'Bespoke Silk & Jacquards',
-    desc: 'Premium prints and brocades crafted on modern loom setups with meticulous attention.',
+    title: 'PREMIUM EMBROIDERED FABRICS',
+    desc: 'We manufacture premium men’s ethnic embroidered fabrics with detailed craftsmanship, rich textures, and modern designs.',
   },
   {
     icon: (
       <svg {...iconProps}><path d="M3 21v-4a4 4 0 014-4h2m6 0h2a4 4 0 014 4v4M12 3a3 3 0 100 6 3 3 0 000-6zm0 6v4" /></svg>
     ),
-    title: 'Artisanal Embroideries',
-    desc: 'Traditional threadwork and contemporary zari highlights representing rich cultural details.',
+    title: 'IN-HOUSE MANUFACTURING',
+    desc: 'From fabric selection to embroidery and finishing, every stage is managed in-house to ensure consistent quality and timely delivery.',
   },
   {
     icon: (
       <svg {...iconProps}><path d="M12 15a3 3 0 100-6 3 3 0 000 6z" /><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 11-4 0v-.09A1.65 1.65 0 008 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06A1.65 1.65 0 004.6 15a1.65 1.65 0 00-1.51-1H3a2 2 0 110-4h.09A1.65 1.65 0 004.6 8.6a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06A1.65 1.65 0 009 4.6h.09A1.65 1.65 0 0010 3.09V3a2 2 0 114 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06A1.65 1.65 0 0019.4 9v.09a1.65 1.65 0 001.51 1H21a2 2 0 110 4h-.09a1.65 1.65 0 00-1.51 1z" /></svg>
     ),
-    title: 'Exclusive Catalog Access',
-    desc: 'Authorised clients access our private archive of patterns, specs and source files.',
+    title: 'TRUSTED B2B PARTNER',
+    desc: 'Serving wholesalers, retailers, garment manufacturers, and fashion brands with reliable quality, competitive pricing, and dependable service.',
   },
   {
     icon: (
       <svg {...iconProps}><path d="M12 2l3 7h7l-5.5 4.5L18 21l-6-4-6 4 1.5-7.5L2 9h7l3-7z" /></svg>
     ),
-    title: '20+ Years Heritage',
-    desc: 'Two decades of craft excellence blending traditional artistry with modern precision.',
-    dynamicYears: true,
+    title: '18+ YEARS OF EXCELLENCE',
+    desc: 'Delivering premium embroidered ethnic fabrics with trusted craftsmanship, innovation, and reliable manufacturing since day one.',
   },
 ];
 
@@ -1174,12 +1173,7 @@ export default function HomePage() {
             gap: '32px',
             padding: '20px 0'
           }} className="reveal-stagger">
-            {features.map(({ icon, title, desc, dynamicYears }, idx) => {
-              // Heritage card shows years derived from the configured founding year
-              const displayTitle = dynamicYears ? `${yearsOfHeritage}+ Years Heritage` : title;
-              const displayDesc = dynamicYears
-                ? `Over ${yearsOfHeritage} years of craft excellence blending traditional artistry with modern precision.`
-                : desc;
+            {features.map(({ icon, title, desc }, idx) => {
               // Alternating tilt angles
               const tiltAngles = ['-3deg', '3deg', '-2deg', '2deg'];
               const translations = ['-8px', '8px', '-5px', '5px'];
@@ -1246,7 +1240,7 @@ export default function HomePage() {
                     marginBottom: '12px',
                     lineHeight: 1.3
                   }}>
-                    {displayTitle}
+                    {title}
                   </h3>
                   
                   <p style={{
@@ -1256,7 +1250,7 @@ export default function HomePage() {
                     lineHeight: 1.75,
                     fontWeight: 300
                   }}>
-                    {displayDesc}
+                    {desc}
                   </p>
 
                   {/* Saffron bottom slide-out accent */}
