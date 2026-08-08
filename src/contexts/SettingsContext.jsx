@@ -7,6 +7,7 @@ export const DEFAULT_SETTINGS = {
   enquiry_email: 'info@sumiro.in',
   home_video_url: '',
   home_video_thumbnail: '',
+  home_video_visible: true,
   collection_slides: [],
   maintenance_mode: false,
   // Countdown settings

@@ -339,6 +339,7 @@ export default function EnquiryEditor({ onSuccess }) {
         enquiry_email: form.enquiry_email.trim(),
         home_video_url: finalVideoUrl,
         home_video_thumbnail: finalThumbnailUrl,
+        home_video_visible: form.home_video_visible !== false,
         collection_slides: finalCollectionImages,
         maintenance_mode: !!form.maintenance_mode,
         countdown_mode: !!form.countdown_mode,
@@ -478,9 +479,46 @@ export default function EnquiryEditor({ onSuccess }) {
 
       {/* ── Section: Campaign Video & Media ─────────────── */}
       <div className="flex flex-col gap-5">
-        <h4 style={{ fontFamily: 'var(--font-sans)', fontSize: '11px', fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--color-text-primary)' }}>
-          Campaign Video Showcase
-        </h4>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '16px' }}>
+          <div style={{ minWidth: 0 }}>
+            <h4 style={{ fontFamily: 'var(--font-sans)', fontSize: '11px', fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--color-text-primary)' }}>
+              Campaign Video Showcase
+            </h4>
+            <p style={{ fontFamily: 'var(--font-sans)', fontSize: '11px', color: '#A3A3A3', marginTop: '3px', lineHeight: 1.5 }}>
+              Enable or disable the video showcase section on the homepage, and upload custom media assets.
+            </p>
+          </div>
+
+          {/* Toggle switch */}
+          <button
+            type="button"
+            role="switch"
+            aria-checked={form.home_video_visible !== false}
+            onClick={isWritable ? () => setForm(prev => ({ ...prev, home_video_visible: prev.home_video_visible === false ? true : false })) : undefined}
+            disabled={!isWritable}
+            style={{
+              flexShrink: 0,
+              width: '48px', height: '28px',
+              borderRadius: '99px',
+              border: 'none',
+              cursor: isWritable ? 'pointer' : 'not-allowed',
+              background: form.home_video_visible !== false ? '#E8890C' : '#D4C9B5',
+              position: 'relative',
+              transition: 'background 0.25s',
+              opacity: isWritable ? 1 : 0.6,
+            }}
+            aria-label="Toggle video section visibility"
+          >
+            <span style={{
+              position: 'absolute', top: '3px',
+              left: form.home_video_visible !== false ? '23px' : '3px',
+              width: '22px', height: '22px',
+              borderRadius: '50%', background: '#FFFFFF',
+              boxShadow: '0 1px 4px rgba(0,0,0,0.25)',
+              transition: 'left 0.25s',
+            }} />
+          </button>
+        </div>
 
         {/* Video Thumbnail (Poster) */}
         <div className="space-y-2">

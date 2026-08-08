@@ -920,15 +920,16 @@ export default function HomePage() {
       )}
 
       {/* ── SECTION 3: VIDEO SHOWCASE (Etro-Style Single Cinematic Viewport) ───────────────── */}
-      <section
-        aria-label="Campaign Video"
-        className="reveal-item"
-        style={{
-          background: '#FFFFFF',
-          padding: '112px 24px',
-          borderBottom: '1px solid var(--color-border)',
-        }}
-      >
+      {settings.home_video_visible !== false && (
+        <section
+          aria-label="Campaign Video"
+          className="reveal-item"
+          style={{
+            background: '#FFFFFF',
+            padding: '112px 24px',
+            borderBottom: '1px solid var(--color-border)',
+          }}
+        >
         <div style={{ maxWidth: '1000px', margin: '0 auto' }}>
           
           {/* Video Player Container */}
@@ -1109,6 +1110,7 @@ export default function HomePage() {
 
         </div>
       </section>
+      )}
 
       
 
