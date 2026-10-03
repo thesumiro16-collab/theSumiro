@@ -48,7 +48,6 @@ export function getOptimizedImageUrl(url, width = 400) {
  * Includes:
  * - Fabric Name (Design Name)
  * - Price
- * - Description (if available)
  *
  * @param {object} design - The design database record
  * @returns {string} Formatted share text
@@ -69,11 +68,6 @@ export function formatDesignShareText(design) {
   // Price
   if (design.rate !== null && design.rate !== undefined && design.rate !== '') {
     lines.push(`Price: ${formatRate(design.rate)}`);
-  }
-
-  // Description
-  if (design.description && String(design.description).trim()) {
-    lines.push(`Description: ${String(design.description).trim()}`);
   }
 
   return lines.join('\n');
