@@ -636,7 +636,7 @@ export default function DesignDetailPage() {
                 disabled={isSharing}
                 className="btn-outline"
                 style={{ padding: '11px 20px', gap: '8px', display: 'flex', alignItems: 'center', fontSize: '11px' }}
-                title="Share photo with Name & Price"
+                title="Share photo with details"
               >
                 {isSharing ? (
                   <div style={{ width: '14px', height: '14px', border: '2px solid currentColor', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.6s linear infinite' }} />
