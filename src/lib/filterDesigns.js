@@ -14,7 +14,7 @@ export function filterDesigns(designs, searchTerm) {
     const tag = (d.tag || '').toLowerCase();
     const fabricName = (d.fabric_name || '').toLowerCase();
     const description = (d.description || '').toLowerCase();
-    
+
     return (
       designNo.includes(term) ||
       tag.includes(term) ||

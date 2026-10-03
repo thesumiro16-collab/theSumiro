@@ -43,3 +43,39 @@ export function getOptimizedImageUrl(url, width = 400) {
   return url.replace('/upload/', `/upload/f_auto,q_auto,w_${width},c_scale/`);
 }
 
+/**
+ * Formats a design's metadata into structured text for social sharing.
+ * Includes:
+ * - Fabric Name (Design Name)
+ * - Price
+ * - Description (if available)
+ *
+ * @param {object} design - The design database record
+ * @returns {string} Formatted share text
+ */
+export function formatDesignShareText(design) {
+  if (!design) return '';
+
+  const lines = [];
+
+  // Name
+  if (design.fabric_name) {
+    const label = design.design_no ? `${design.fabric_name} (${design.design_no})` : design.fabric_name;
+    lines.push(`Name: ${label}`);
+  } else if (design.design_no) {
+    lines.push(`Name: ${design.design_no}`);
+  }
+
+  // Price
+  if (design.rate !== null && design.rate !== undefined && design.rate !== '') {
+    lines.push(`Price: ${formatRate(design.rate)}`);
+  }
+
+  // Description
+  if (design.description && String(design.description).trim()) {
+    lines.push(`Description: ${String(design.description).trim()}`);
+  }
+
+  return lines.join('\n');
+}
+

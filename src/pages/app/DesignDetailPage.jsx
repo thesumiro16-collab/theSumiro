@@ -1,17 +1,16 @@
-import { useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useParams, Link, useSearchParams } from 'react-router-dom';
 import { useDesignDetail } from '../../hooks/useDesignDetail';
 import { useToast } from '../../contexts/ToastContext';
 import PhotoGallery from '../../components/designs/PhotoGallery';
 import FolderCountField from '../../components/designs/FolderCountField';
 import ShareFolderModal from '../../components/designs/ShareFolderModal';
+import EditMetadataModal from '../../components/designs/EditMetadataModal';
 import Modal from '../../components/ui/Modal';
-import { formatDesignNo, formatRate, formatDate } from '../../utils/formatters';
+import { formatDesignNo, formatRate, formatDate, formatDesignShareText } from '../../utils/formatters';
 import { useAuth } from '../../contexts/AuthContext';
 
-
-
-const MetaRow = ({ label, value }) => (
+const MetaRow = ({ label, value, isEditable, onEdit, isEditing, children }) => (
   <div style={{
     display: 'grid',
     gridTemplateColumns: '120px 1fr',
@@ -20,24 +19,92 @@ const MetaRow = ({ label, value }) => (
     padding: '14px 0',
     borderBottom: '1px solid var(--color-border-soft)',
   }}>
-    <span style={{ fontFamily: 'var(--font-sans)', fontSize: '10px', fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', color: '#A3A3A3', paddingTop: '2px' }}>
+    <span style={{ fontFamily: 'var(--font-sans)', fontSize: '10px', fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', color: '#A3A3A3', paddingTop: '4px' }}>
       {label}
     </span>
-    <span style={{ fontFamily: 'var(--font-sans)', fontSize: '14px', color: '#0A0A0A', lineHeight: 1.5 }}>
-      {value}
-    </span>
+    {isEditing ? (
+      <div>{children}</div>
+    ) : (
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
+        <span style={{ fontFamily: 'var(--font-sans)', fontSize: '14px', color: value ? '#0A0A0A' : '#737373', lineHeight: 1.5, fontStyle: value ? 'normal' : 'italic' }}>
+          {value || `No ${label.toLowerCase()} added`}
+        </span>
+        {isEditable && (
+          <button
+            onClick={onEdit}
+            style={{
+              background: 'none',
+              border: 'none',
+              color: '#E8890C',
+              cursor: 'pointer',
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: '4px',
+              borderRadius: '6px',
+              transition: 'background 0.2s, color 0.2s',
+              flexShrink: 0
+            }}
+            onMouseEnter={e => {
+              e.currentTarget.style.background = 'rgba(232, 137, 12, 0.12)';
+            }}
+            onMouseLeave={e => {
+              e.currentTarget.style.background = 'none';
+            }}
+            title={`Edit ${label}`}
+            aria-label={`Edit ${label}`}
+          >
+            <svg width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+            </svg>
+          </button>
+        )}
+      </div>
+    )}
   </div>
 );
 
 export default function DesignDetailPage() {
   const { id } = useParams();
-  const { design, photos, loading, error, refetch, updateField, uploadAndAddPhotos, deletePhoto, reorderPhotos } = useDesignDetail(id);
+  const {
+    design,
+    photos,
+    loading,
+    error,
+    refetch,
+    updateField,
+    updateFields,
+    uploadAndAddPhotos,
+    deletePhoto,
+    reorderPhotos
+  } = useDesignDetail(id);
   const { addToast } = useToast();
-  const { canWrite } = useAuth();
-  const isWritable = canWrite('dashboard');
+  const [searchParams] = useSearchParams();
+  const { canWrite, profile, user } = useAuth();
+  // Ensure admins and users in admin panel always have edit capabilities
+  const isWritable = profile
+    ? (profile.role === 'admin' || canWrite?.('dashboard') !== false)
+    : true;
+
   const [shareModalOpen, setShareModalOpen] = useState(false);
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [isSharing, setIsSharing] = useState(false);
+
+  useEffect(() => {
+    if (searchParams.get('edit') === 'true') {
+      setEditModalOpen(true);
+    }
+  }, [searchParams]);
+
+  // Inline edit state
   const [isEditingRate, setIsEditingRate] = useState(false);
   const [rateValue, setRateValue] = useState('');
+
+  const [isEditingFabricName, setIsEditingFabricName] = useState(false);
+  const [fabricNameValue, setFabricNameValue] = useState('');
+
+  const [isEditingDesc, setIsEditingDesc] = useState(false);
+  const [descValue, setDescValue] = useState('');
 
   // Photo management state
   const [editPhotosOpen, setEditPhotosOpen] = useState(false);
@@ -76,8 +143,6 @@ export default function DesignDetailPage() {
   };
 
   const handleDragEnd = () => { setDraggedId(null); setDragOverId(null); };
-
-
 
   const handleDeletePhoto = async (photo) => {
     if (photos.length <= 1) {
@@ -130,23 +195,75 @@ export default function DesignDetailPage() {
     await updateField('rate', parsed);
   };
 
+  const handleStartEditFabricName = () => {
+    setFabricNameValue(design?.fabric_name || '');
+    setIsEditingFabricName(true);
+  };
+
+  const handleSaveFabricName = async () => {
+    if (!fabricNameValue.trim()) {
+      addToast({ type: 'error', message: 'Fabric name cannot be empty' });
+      return;
+    }
+    setIsEditingFabricName(false);
+    await updateField('fabric_name', fabricNameValue.trim());
+  };
+
+  const handleStartEditDesc = () => {
+    setDescValue(design?.description || '');
+    setIsEditingDesc(true);
+  };
+
+  const handleSaveDesc = async () => {
+    setIsEditingDesc(false);
+    await updateField('description', descValue.trim() || null);
+  };
+
   const handleShareImage = async () => {
-    if (!photos || photos.length === 0) { addToast({ type: 'error', message: 'No image to share' }); return; }
+    if (!photos || photos.length === 0) {
+      addToast({ type: 'error', message: 'No image to share' });
+      return;
+    }
     const currentPhoto = photos[0];
+    const shareText = formatDesignShareText(design);
+
+    setIsSharing(true);
     try {
       const response = await fetch(currentPhoto.secure_url);
       const blob = await response.blob();
-      const file = new File([blob], 'design-image.jpg', { type: 'image/jpeg' });
-      if (navigator.share && navigator.canShare({ files: [file] })) {
-        await navigator.share({ files: [file], title: design?.fabric_name, text: `Check out this design: ${design?.fabric_name}` });
-        addToast({ type: 'success', message: 'Image shared successfully' });
+      const ext = currentPhoto.secure_url.includes('.png') ? 'png' : 'jpg';
+      const file = new File([blob], `${design?.design_no || 'design'}.${ext}`, { type: blob.type || 'image/jpeg' });
+
+      if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+        await navigator.share({
+          files: [file],
+          title: shareText,
+          text: shareText,
+        });
+        addToast({ type: 'success', message: 'Design photo & info shared successfully' });
+      } else if (navigator.share) {
+        await navigator.share({
+          title: shareText,
+          text: `${shareText}\n\nPhoto: ${currentPhoto.secure_url}`,
+          url: currentPhoto.secure_url,
+        });
+        addToast({ type: 'success', message: 'Design details shared successfully' });
       } else {
-        navigator.clipboard.writeText(currentPhoto.secure_url);
-        addToast({ type: 'success', message: 'Image URL copied to clipboard' });
+        // Fallback: Copy name, price, description + photo URL to clipboard
+        await navigator.clipboard.writeText(`${shareText}\n\nPhoto: ${currentPhoto.secure_url}`);
+        addToast({ type: 'success', message: 'Design name, price, description & photo link copied to clipboard!' });
       }
-    } catch {
-      navigator.clipboard.writeText(currentPhoto.secure_url);
-      addToast({ type: 'success', message: 'Image URL copied to clipboard' });
+    } catch (err) {
+      if (err.name !== 'AbortError') {
+        try {
+          await navigator.clipboard.writeText(`${shareText}\n\nPhoto: ${currentPhoto.secure_url}`);
+          addToast({ type: 'info', message: 'Design name, price, description & photo link copied to clipboard' });
+        } catch {
+          addToast({ type: 'error', message: 'Failed to share image' });
+        }
+      }
+    } finally {
+      setIsSharing(false);
     }
   };
 
@@ -154,6 +271,7 @@ export default function DesignDetailPage() {
     updateField('extra_folder', design.extra_folder - foldersShared);
     refetch();
   };
+
 
   // ── Loading ──────────────────────────────────────────────
   if (loading) return (
@@ -245,9 +363,81 @@ export default function DesignDetailPage() {
                 )}
               </div>
               {/* Fabric Name */}
-              <h1 style={{ fontFamily: 'var(--font-serif)', fontSize: 'clamp(1.8rem, 4vw, 2.4rem)', fontWeight: 400, color: '#0A0A0A', lineHeight: 1.15, marginBottom: '6px' }}>
-                {design.fabric_name}
-              </h1>
+              {isEditingFabricName ? (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+                  <input
+                    type="text"
+                    value={fabricNameValue}
+                    onChange={(e) => setFabricNameValue(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') handleSaveFabricName();
+                      if (e.key === 'Escape') setIsEditingFabricName(false);
+                    }}
+                    style={{
+                      flex: 1,
+                      background: 'var(--color-bg-soft)',
+                      border: '1.5px solid #E8890C',
+                      borderRadius: '6px',
+                      padding: '6px 10px',
+                      fontFamily: 'var(--font-serif)',
+                      fontSize: '1.5rem',
+                      color: '#0A0A0A',
+                      outline: 'none',
+                    }}
+                    autoFocus
+                  />
+                  <button
+                    onClick={handleSaveFabricName}
+                    className="btn-primary"
+                    style={{ padding: '6px 12px', fontSize: '11px', borderRadius: '6px' }}
+                  >
+                    Save
+                  </button>
+                  <button
+                    onClick={() => setIsEditingFabricName(false)}
+                    className="btn-outline"
+                    style={{ padding: '6px 12px', fontSize: '11px', borderRadius: '6px' }}
+                  >
+                    Cancel
+                  </button>
+                </div>
+              ) : (
+                <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '12px', marginBottom: '6px' }}>
+                  <h1 style={{ fontFamily: 'var(--font-serif)', fontSize: 'clamp(1.8rem, 4vw, 2.4rem)', fontWeight: 400, color: '#0A0A0A', lineHeight: 1.15, margin: 0 }}>
+                    {design.fabric_name}
+                  </h1>
+                  {isWritable && (
+                    <button
+                      onClick={handleStartEditFabricName}
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        color: '#E8890C',
+                        cursor: 'pointer',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        padding: '4px',
+                        borderRadius: '6px',
+                        transition: 'background 0.2s, color 0.2s',
+                        flexShrink: 0,
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.background = 'rgba(232, 137, 12, 0.12)';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.background = 'none';
+                      }}
+                      title="Edit Fabric Name"
+                      aria-label="Edit Fabric Name"
+                    >
+                      <svg width="17" height="17" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                      </svg>
+                    </button>
+                  )}
+                </div>
+              )}
               {/* Rate */}
               {isEditingRate ? (
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '10px' }}>
@@ -296,28 +486,40 @@ export default function DesignDetailPage() {
                   style={{
                     display: 'inline-flex',
                     alignItems: 'center',
-                    gap: '10px',
+                    gap: '12px',
                     marginTop: '10px',
-                    cursor: isWritable ? 'pointer' : 'default'
                   }}
-                  onClick={isWritable ? handleStartEditRate : undefined}
-                  title={isWritable ? "Click to edit rate" : undefined}
                 >
-                  <span style={{ fontFamily: 'var(--font-sans)', fontSize: '20px', color: '#E8890C', fontWeight: 700 }}>
+                  <span
+                    onClick={isWritable ? handleStartEditRate : undefined}
+                    style={{ fontFamily: 'var(--font-sans)', fontSize: '20px', color: '#E8890C', fontWeight: 700, cursor: isWritable ? 'pointer' : 'default' }}
+                    title={isWritable ? "Click to edit rate" : undefined}
+                  >
                     {formatRate(design.rate)}
                   </span>
                   {isWritable && (
                     <button
+                      onClick={handleStartEditRate}
                       style={{
                         background: 'none',
                         border: 'none',
-                        color: '#A3A3A3',
+                        color: '#E8890C',
                         cursor: 'pointer',
-                        display: 'flex',
+                        display: 'inline-flex',
                         alignItems: 'center',
-                        padding: 0,
+                        justifyContent: 'center',
+                        padding: '4px',
+                        borderRadius: '6px',
+                        transition: 'background 0.2s, color 0.2s',
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.background = 'rgba(232, 137, 12, 0.12)';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.background = 'none';
                       }}
                       aria-label="Edit rate"
+                      title="Edit rate"
                     >
                       <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
@@ -330,8 +532,51 @@ export default function DesignDetailPage() {
 
               {/* Meta rows */}
               <div style={{ marginTop: '4px' }}>
-                {design.description && (
-                  <MetaRow label="Description" value={design.description} />
+                {(design.description || isWritable) && (
+                  <MetaRow
+                    label="Description"
+                    value={design.description}
+                    isEditable={isWritable}
+                    onEdit={handleStartEditDesc}
+                    isEditing={isEditingDesc}
+                  >
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                      <textarea
+                        rows={3}
+                        value={descValue}
+                        onChange={(e) => setDescValue(e.target.value)}
+                        placeholder="Add design description..."
+                        style={{
+                          width: '100%',
+                          padding: '8px 12px',
+                          borderRadius: '6px',
+                          border: '1.5px solid #E8890C',
+                          fontFamily: 'var(--font-sans)',
+                          fontSize: '13px',
+                          outline: 'none',
+                          resize: 'vertical',
+                          boxSizing: 'border-box',
+                        }}
+                        autoFocus
+                      />
+                      <div style={{ display: 'flex', gap: '8px' }}>
+                        <button
+                          onClick={handleSaveDesc}
+                          className="btn-primary"
+                          style={{ padding: '6px 12px', fontSize: '11px', borderRadius: '6px' }}
+                        >
+                          Save
+                        </button>
+                        <button
+                          onClick={() => setIsEditingDesc(false)}
+                          className="btn-outline"
+                          style={{ padding: '6px 12px', fontSize: '11px', borderRadius: '6px' }}
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  </MetaRow>
                 )}
                 <MetaRow label="Added On" value={formatDate(design.created_at)} />
               </div>
@@ -388,13 +633,19 @@ export default function DesignDetailPage() {
             }}>
               <button
                 onClick={handleShareImage}
+                disabled={isSharing}
                 className="btn-outline"
-                style={{ padding: '11px 22px', gap: '8px', display: 'flex', alignItems: 'center', fontSize: '11px' }}
+                style={{ padding: '11px 20px', gap: '8px', display: 'flex', alignItems: 'center', fontSize: '11px' }}
+                title="Share photo with Name, Price & Description"
               >
-                <svg width="15" height="15" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
-                </svg>
-                Share Image
+                {isSharing ? (
+                  <div style={{ width: '14px', height: '14px', border: '2px solid currentColor', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.6s linear infinite' }} />
+                ) : (
+                  <svg width="15" height="15" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+                  </svg>
+                )}
+                {isSharing ? 'Preparing...' : 'Share Photo & Info'}
               </button>
               <button
                 onClick={() => setShareModalOpen(true)}
@@ -423,6 +674,17 @@ export default function DesignDetailPage() {
           </div>
         </div>
       </div>
+
+      {/* Edit Metadata Modal */}
+      <Modal isOpen={editModalOpen} onClose={() => setEditModalOpen(false)} title="Edit Design Details">
+        <EditMetadataModal
+          design={design}
+          onClose={() => setEditModalOpen(false)}
+          onSave={async (fields) => {
+            await updateFields(fields);
+          }}
+        />
+      </Modal>
 
       {/* Share Modal */}
       <Modal isOpen={shareModalOpen} onClose={() => setShareModalOpen(false)} title="Share Folder">
@@ -462,8 +724,8 @@ export default function DesignDetailPage() {
                     border: confirmDeletePhoto === p.id
                       ? '2px solid #DC2626'
                       : dragOverId === p.id
-                      ? '2px dashed #E8890C'
-                      : '1px solid var(--color-border)',
+                        ? '2px dashed #E8890C'
+                        : '1px solid var(--color-border)',
                     aspectRatio: '1',
                     background: '#F7F5F1',
                     transition: 'border-color 0.15s, opacity 0.15s, transform 0.15s',

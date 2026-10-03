@@ -64,15 +64,38 @@ export function useDesignDetail(id) {
     [design, addToast]
   );
 
+  const updateFields = useCallback(
+    async (fields) => {
+      if (!design) return false;
+      const previous = { ...design };
+      setDesign((prev) => ({ ...prev, ...fields }));
+
+      const { error: updateError } = await supabase
+        .from('designs')
+        .update(fields)
+        .eq('id', design.id);
+
+      if (updateError) {
+        setDesign(previous);
+        addToast({ type: 'error', message: `Failed to update design: ${updateError.message}` });
+        throw updateError;
+      } else {
+        addToast({ type: 'success', message: 'Design updated successfully' });
+        return true;
+      }
+    },
+    [design, addToast]
+  );
+
   const uploadAndAddPhotos = useCallback(
     async (filesToUpload, onProgress) => {
       if (!id || !design) return;
       try {
         const uploaded = await uploadPhotosToCloudinary(filesToUpload, onProgress);
-        
+
         // Get the next sort_order
         const nextSortOrder = photos.length > 0 ? Math.max(...photos.map(p => p.sort_order)) + 1 : 0;
-        
+
         const { data: { session } } = await supabase.auth.getSession();
         const insertData = uploaded.map((p, i) => ({
           design_id: id,
@@ -81,14 +104,14 @@ export function useDesignDetail(id) {
           sort_order: nextSortOrder + i,
           created_by: session?.user?.id
         }));
-        
+
         const { data, error: insertError } = await supabase
           .from('design_photos')
           .insert(insertData)
           .select();
-          
+
         if (insertError) throw insertError;
-        
+
         setPhotos(prev => [...prev, ...data]);
         addToast({ type: 'success', message: 'Photos added successfully!' });
         return data;
@@ -143,9 +166,9 @@ export function useDesignDetail(id) {
         // Step 2: Delete row from Supabase database via RPC (bypasses RLS)
         const { error: deleteError } = await supabase
           .rpc('admin_delete_photo', { p_photo_id: photo.id });
-          
+
         if (deleteError) throw deleteError;
-        
+
         setPhotos(prev => prev.filter(p => p.id !== photo.id));
         addToast({ type: 'success', message: 'Photo deleted successfully!' });
       } catch (err) {
@@ -163,6 +186,7 @@ export function useDesignDetail(id) {
     error,
     refetch: fetchDesign,
     updateField,
+    updateFields,
     updateFolderCount: updateField,
     uploadAndAddPhotos,
     deletePhoto,
