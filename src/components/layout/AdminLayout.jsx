@@ -4,6 +4,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useSettings } from '../../contexts/SettingsContext';
 import { supabase } from '../../lib/supabase';
 import ToastContainer from '../ui/ToastContainer';
+import { triggerAdminPwaInstall, useCanInstallAdminPwa } from '../ui/PwaInstallPrompt';
 
 const SIDEBAR_W = 288;
 const BREAKPOINT = 768;
@@ -16,6 +17,7 @@ export default function AdminLayout() {
   const [isMobile, setIsMobile] = useState(window.innerWidth < BREAKPOINT);
   const [isOpen, setIsOpen] = useState(window.innerWidth >= BREAKPOINT);
   const [messageCount, setMessageCount] = useState(0);
+  const canInstall = useCanInstallAdminPwa();
 
   /* ── Track viewport ──────────────────────────────────── */
   useEffect(() => {
@@ -312,6 +314,45 @@ export default function AdminLayout() {
           borderTop: '1px solid var(--color-border-soft)',
           flexShrink: 0,
         }}>
+          {canInstall && (
+            <button
+              onClick={triggerAdminPwaInstall}
+              type="button"
+              id="admin-install-app-btn"
+              style={{
+                width: '100%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '8px',
+                padding: '9px 12px',
+                marginBottom: '10px',
+                borderRadius: '8px',
+                border: '1px solid #F5C97A',
+                background: '#FDF3E3',
+                fontFamily: 'var(--font-sans)',
+                fontSize: '12px',
+                fontWeight: 700,
+                letterSpacing: '0.04em',
+                color: '#C5720A',
+                cursor: 'pointer',
+                transition: 'background 0.2s, transform 0.15s',
+              }}
+              onMouseEnter={e => {
+                e.currentTarget.style.background = '#FBE8C8';
+                e.currentTarget.style.transform = 'translateY(-1px)';
+              }}
+              onMouseLeave={e => {
+                e.currentTarget.style.background = '#FDF3E3';
+                e.currentTarget.style.transform = 'translateY(0)';
+              }}
+            >
+              <svg width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+              </svg>
+              <span>Install Admin App</span>
+            </button>
+          )}
           {user && (
             <div style={{ marginBottom: '10px', padding: '10px 6px', borderRadius: '8px', background: 'var(--color-bg-soft)' }}>
               <p style={{

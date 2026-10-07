@@ -9,6 +9,7 @@ import Footer from './components/layout/Footer';
 import ToastContainer from './components/ui/ToastContainer';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 import FaviconUpdater from './components/ui/FaviconUpdater';
+import PwaInstallPrompt from './components/ui/PwaInstallPrompt';
 
 // Lazy-loaded pages — only downloaded when the route is visited
 const HomePage = lazy(() => import('./pages/portfolio/HomePage'));
@@ -189,6 +190,7 @@ export default function App() {
                 )}
               </Routes>
             </Suspense>
+            <PwaInstallPrompt />
             <ToastContainer />
           </ToastProvider>
         </SettingsProvider>
