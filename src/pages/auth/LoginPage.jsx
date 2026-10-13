@@ -31,8 +31,9 @@ export default function LoginPage() {
     try {
       await signIn(form.email, form.password);
       navigate(redirect, { replace: true });
-    } catch {
-      setError('Email or password is incorrect.');
+    } catch (err) {
+      console.error('Login error:', err);
+      setError(err?.message || 'Email or password is incorrect.');
     } finally {
       setLoading(false);
     }

@@ -53,6 +53,16 @@ export function AuthProvider({ children }) {
     }
   }
 
+  // Record user sign-in timestamp (non-blocking)
+  async function recordUserLogin() {
+    try {
+      await supabase.rpc('record_user_sign_in');
+    } catch (err) {
+      // Non-fatal, do not break sign-in
+      console.debug('Login tracking note:', err?.message);
+    }
+  }
+
   useEffect(() => {
     // Resolve initial session safely
     supabase.auth.getSession()
@@ -71,11 +81,14 @@ export function AuthProvider({ children }) {
 
     // Listen for auth state changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (_event, session) => {
+      async (event, session) => {
         setUser(session?.user ?? null);
         if (session?.user) {
           try {
             await fetchProfile(session.user.id, session.user.email);
+            if (event === 'SIGNED_IN') {
+              recordUserLogin();
+            }
           } catch (err) {
             console.error('Error in onAuthStateChange profile fetch:', err);
             setLoading(false);
@@ -93,6 +106,7 @@ export function AuthProvider({ children }) {
   async function signIn(email, password) {
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) throw error;
+    recordUserLogin();
   }
 
   async function signOut() {

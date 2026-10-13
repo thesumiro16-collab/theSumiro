@@ -2,15 +2,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../../contexts/ToastContext';
-import { createClient } from '@supabase/supabase-js';
 import Spinner from '../../components/ui/Spinner';
-
-// Secondary client — registers users without logging the admin out
-const adminAuthClient = createClient(
-  import.meta.env.VITE_SUPABASE_URL,
-  import.meta.env.VITE_SUPABASE_ANON_KEY,
-  { auth: { persistSession: false } }
-);
 
 // Page-level permission definitions
 const PERMISSION_PAGES = [
@@ -244,19 +236,14 @@ export default function UserManagementPage() {
 
     setSaving(true);
     try {
-      // Use signUp via separate client (won't log out current admin)
-      const { data: { user: newUser }, error: signUpError } = await adminAuthClient.auth.signUp({
-        email: finalEmail,
-        password: createForm.password,
-        options: { data: { full_name: createForm.fullName.trim() } }
+      // Create user atomically via admin RPC (Invite-only)
+      const { error: createError } = await supabase.rpc('admin_create_user', {
+        p_email: finalEmail,
+        p_password: createForm.password,
+        p_full_name: createForm.fullName.trim(),
+        p_role: createForm.role,
       });
-      if (signUpError) throw signUpError;
-
-      // Create matching profile in user_profiles table
-      const { error: profileError } = await supabase
-        .from('user_profiles')
-        .insert({ id: newUser.id, full_name: createForm.fullName.trim(), role: createForm.role, permissions: DEFAULT_PERMISSIONS });
-      if (profileError) throw new Error('Auth account created but profile setup failed: ' + profileError.message);
+      if (createError) throw createError;
 
       addToast({ type: 'success', message: `User '${createForm.fullName}' (${finalEmail}) created successfully.` });
       setCreateForm({ fullName: '', email: '', password: '', role: 'admin', domain: '@sumiro.com' });
@@ -367,13 +354,14 @@ export default function UserManagementPage() {
                 <tr>
                   <th style={th}>User</th>
                   <th style={th}>Role</th>
+                  <th style={th}>Last Login</th>
                   <th style={th}>Page Permissions</th>
                   <th style={{ ...th, textAlign: 'right' }}>Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {profiles.length === 0 && (
-                  <tr><td colSpan={4} style={{ ...td, textAlign: 'center', color: '#9CA3AF', padding: '40px' }}>No users found.</td></tr>
+                  <tr><td colSpan={5} style={{ ...td, textAlign: 'center', color: '#9CA3AF', padding: '40px' }}>No users found.</td></tr>
                 )}
                 {profiles.map((p) => {
                   const isSelf = p.id === user.id;
@@ -430,6 +418,34 @@ export default function UserManagementPage() {
                           {/* Fallback if roles table empty */}
                           {roles.length === 0 && <option value="admin">Admin</option>}
                         </select>
+                      </td>
+
+                      {/* Last Login */}
+                      <td style={td}>
+                        {p.last_sign_in_at ? (
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <span style={{ width: '7px', height: '7px', borderRadius: '50%', background: '#10B981', display: 'inline-block', flexShrink: 0 }} />
+                            <div>
+                              <div style={{ fontSize: '12px', fontWeight: 600, color: '#1F2937' }}>
+                                {new Date(p.last_sign_in_at).toLocaleDateString(undefined, {
+                                  month: 'short',
+                                  day: 'numeric',
+                                  year: 'numeric'
+                                })}
+                              </div>
+                              <div style={{ fontSize: '11px', color: '#9CA3AF', marginTop: '1px' }}>
+                                {new Date(p.last_sign_in_at).toLocaleTimeString(undefined, {
+                                  hour: '2-digit',
+                                  minute: '2-digit'
+                                })}
+                              </div>
+                            </div>
+                          </div>
+                        ) : (
+                          <span style={{ fontSize: '11px', color: '#9CA3AF', fontStyle: 'italic' }}>
+                            Never
+                          </span>
+                        )}
                       </td>
 
                       {/* Permissions summary */}
